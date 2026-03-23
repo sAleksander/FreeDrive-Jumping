@@ -1,5 +1,12 @@
 import path from 'node:path';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
+import { DroneController, type DroneStatus } from './drone-controller';
+
+const droneController = new DroneController((status: DroneStatus) => {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send('drone:status', status);
+  }
+});
 
 function createMainWindow() {
   const mainWindow = new BrowserWindow({
@@ -25,6 +32,11 @@ function createMainWindow() {
   }
 }
 
+ipcMain.handle('drone:get-status', () => droneController.getStatus());
+ipcMain.handle('drone:connect', () => droneController.connect());
+ipcMain.handle('drone:disconnect', () => droneController.disconnect());
+ipcMain.handle('drone:stop', () => droneController.stop());
+
 app.whenReady().then(() => {
   createMainWindow();
 
@@ -33,6 +45,10 @@ app.whenReady().then(() => {
       createMainWindow();
     }
   });
+});
+
+app.on('before-quit', () => {
+  void droneController.disconnect();
 });
 
 app.on('window-all-closed', () => {
