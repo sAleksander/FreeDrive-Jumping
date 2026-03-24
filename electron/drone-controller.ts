@@ -3,12 +3,14 @@ import type { Socket as NetSocket } from 'node:net';
 
 type DronePhase = 'idle' | 'connecting' | 'connected' | 'error';
 type DronePosture = 'standing' | 'jumper' | 'kicker' | 'stuck' | 'unknown' | null;
+type DroneDriveCommand = 'forward' | 'backward' | 'left' | 'right';
 
 export interface DroneStatus {
   phase: DronePhase;
   connected: boolean;
   battery: number | null;
   posture: DronePosture;
+  activeCommand: DroneDriveCommand | null;
   lastEvent: string | null;
   lastError: string | null;
   updatedAt: string | null;
@@ -17,6 +19,10 @@ export interface DroneStatus {
 interface NodeSumoClient {
   connect(callback?: (error?: unknown) => void): void;
   disconnect(): void;
+  forward(speed: number): this;
+  backward(speed: number): this;
+  left(speed: number): this;
+  right(speed: number): this;
   stop(): this;
   on(event: string, listener: (...args: unknown[]) => void): this;
   once(event: string, listener: (...args: unknown[]) => void): this;
@@ -37,6 +43,7 @@ const initialStatus: DroneStatus = {
   connected: false,
   battery: null,
   posture: null,
+  activeCommand: null,
   lastEvent: null,
   lastError: null,
   updatedAt: null,
@@ -81,6 +88,7 @@ function destroyNetSocket(socket?: NetSocket) {
 export class DroneController {
   private drone: NodeSumoClient | null = null;
   private status: DroneStatus = initialStatus;
+  private readonly driveSpeed = 30;
 
   constructor(
     private readonly onStatusChange: (status: DroneStatus) => void,
@@ -104,6 +112,7 @@ export class DroneController {
       connected: false,
       battery: null,
       posture: null,
+      activeCommand: null,
       lastError: null,
       lastEvent: 'Starting discovery handshake',
     });
@@ -173,6 +182,7 @@ export class DroneController {
         connected: false,
         battery: null,
         posture: null,
+        activeCommand: null,
         lastError: message,
         lastEvent: 'Connection failed',
       });
@@ -198,6 +208,40 @@ export class DroneController {
     return this.getStatus();
   }
 
+  async drive(command: DroneDriveCommand) {
+    if (!this.drone || !this.status.connected) {
+      return this.getStatus();
+    }
+
+    if (this.status.activeCommand === command) {
+      return this.getStatus();
+    }
+
+    try {
+      this.drone[command](this.driveSpeed);
+      this.publishStatus({
+        activeCommand: command,
+        lastError: null,
+        lastEvent: `Drive command: ${command} at ${this.driveSpeed}% speed`,
+      });
+      return this.getStatus();
+    } catch (error) {
+      const message = toErrorMessage(
+        error,
+        `Failed to send the ${command} command.`,
+      );
+
+      this.publishStatus({
+        phase: 'error',
+        connected: false,
+        activeCommand: null,
+        lastError: message,
+        lastEvent: `${command} command failed`,
+      });
+      throw new Error(message);
+    }
+  }
+
   async stop() {
     if (!this.drone || !this.status.connected) {
       return this.getStatus();
@@ -206,6 +250,7 @@ export class DroneController {
     try {
       this.drone.stop();
       this.publishStatus({
+        activeCommand: null,
         lastEvent: 'Stop command sent',
         lastError: null,
       });
@@ -219,6 +264,7 @@ export class DroneController {
       this.publishStatus({
         phase: 'error',
         connected: false,
+        activeCommand: null,
         lastError: message,
         lastEvent: 'Stop command failed',
       });

@@ -4,14 +4,22 @@ const checks = [
   'Join the drone Wi-Fi on this Mac',
   'Click connect and wait for ready state',
   'Confirm a battery or posture event appears',
-  'Use stop before moving on to driving work',
+  'Press W/A/S/D to drive and release the key to stop',
 ];
+
+const keyMap: Record<string, DroneDriveCommand> = {
+  w: 'forward',
+  s: 'backward',
+  a: 'left',
+  d: 'right',
+};
 
 const initialStatus: DroneStatus = {
   phase: 'idle',
   connected: false,
   battery: null,
   posture: null,
+  activeCommand: null,
   lastEvent: null,
   lastError: null,
   updatedAt: null,
@@ -19,19 +27,72 @@ const initialStatus: DroneStatus = {
 
 function App() {
   const runtime = window.electronAPI;
+  const droneApi = runtime?.drone;
   const [status, setStatus] = useState<DroneStatus>(initialStatus);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!runtime?.drone) {
+    if (!droneApi) {
       return;
     }
 
-    void runtime.drone.getStatus().then(setStatus);
-    const unsubscribe = runtime.drone.onStatus(setStatus);
+    void droneApi.getStatus().then(setStatus);
+    const unsubscribe = droneApi.onStatus(setStatus);
 
     return unsubscribe;
-  }, [runtime]);
+  }, [droneApi]);
+
+  useEffect(() => {
+    if (!droneApi || !status.connected) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const command = keyMap[event.key.toLowerCase()];
+
+      if (!command || event.repeat) {
+        return;
+      }
+
+      event.preventDefault();
+      void runAction(() => droneApi.drive(command));
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      const command = keyMap[event.key.toLowerCase()];
+
+      if (!command) {
+        return;
+      }
+
+      event.preventDefault();
+      void runAction(() => droneApi.stop());
+    };
+
+    const handleVisibilityOrBlur = () => {
+      void runAction(() => droneApi.stop());
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('blur', handleVisibilityOrBlur);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        handleVisibilityOrBlur();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('blur', handleVisibilityOrBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      void droneApi.stop();
+    };
+  }, [droneApi, status.connected]);
 
   async function runAction(action: () => Promise<DroneStatus>) {
     try {
@@ -53,9 +114,8 @@ function App() {
         <p className="eyebrow">Connectivity Spike</p>
         <h1>FreeDrive Jumping</h1>
         <p className="intro">
-          This build only proves the desktop app can discover a Jumping drone,
-          receive status events, and send a safe stop command through the
-          Electron backend.
+          The app can now discover the drone, receive live state, and send
+          fixed-speed keyboard drive commands through the Electron backend.
         </p>
 
         <div className="runtime-grid">
@@ -81,7 +141,7 @@ function App() {
           <button
             className="primary-button"
             disabled={status.phase === 'connecting' || status.connected}
-            onClick={() => void runAction(() => runtime!.drone.connect())}
+            onClick={() => void runAction(() => droneApi!.connect())}
             type="button"
           >
             {status.phase === 'connecting' ? 'Connecting...' : 'Connect'}
@@ -89,7 +149,7 @@ function App() {
           <button
             className="secondary-button"
             disabled={!status.connected && status.phase !== 'error'}
-            onClick={() => void runAction(() => runtime!.drone.disconnect())}
+            onClick={() => void runAction(() => droneApi!.disconnect())}
             type="button"
           >
             Disconnect
@@ -97,7 +157,7 @@ function App() {
           <button
             className="danger-button"
             disabled={!status.connected}
-            onClick={() => void runAction(() => runtime!.drone.stop())}
+            onClick={() => void runAction(() => droneApi!.stop())}
             type="button"
           >
             Stop
@@ -126,6 +186,10 @@ function App() {
             <dd>{status.posture ?? 'Unknown'}</dd>
           </div>
           <div>
+            <dt>Drive</dt>
+            <dd>{status.activeCommand ?? 'Stopped'}</dd>
+          </div>
+          <div>
             <dt>Last update</dt>
             <dd>
               {status.updatedAt
@@ -149,9 +213,23 @@ function App() {
           ))}
         </ul>
 
+        <div className="keys-card">
+          <span className="label">Keyboard</span>
+          <div className="keys-grid">
+            <kbd>W</kbd>
+            <kbd>A</kbd>
+            <kbd>S</kbd>
+            <kbd>D</kbd>
+          </div>
+          <p className="hint">
+            Release the key to stop. Switching tabs or blurring the window also
+            sends stop automatically.
+          </p>
+        </div>
+
         <p className="hint">
-          The next milestone after this spike is keyboard driving through the
-          same backend bridge. Video comes later.
+          This first driving mode is intentionally conservative: one direction
+          at a time, fixed speed, and explicit stop behavior.
         </p>
       </section>
     </main>

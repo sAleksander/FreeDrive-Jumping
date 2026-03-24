@@ -30,19 +30,26 @@ function createMainWindow() {
   } else {
     void mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
+
+  return mainWindow;
 }
 
 ipcMain.handle('drone:get-status', () => droneController.getStatus());
 ipcMain.handle('drone:connect', () => droneController.connect());
 ipcMain.handle('drone:disconnect', () => droneController.disconnect());
+ipcMain.handle('drone:drive', (_event, command: 'forward' | 'backward' | 'left' | 'right') => droneController.drive(command));
 ipcMain.handle('drone:stop', () => droneController.stop());
 
 app.whenReady().then(() => {
-  createMainWindow();
+  createMainWindow().on('blur', () => {
+    void droneController.stop();
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
+      createMainWindow().on('blur', () => {
+        void droneController.stop();
+      });
     }
   });
 });
