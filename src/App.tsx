@@ -163,6 +163,21 @@ function App() {
             Stop
           </button>
         </div>
+
+        <section className="video-card">
+          <div className="video-header">
+            <div>
+              <span className="label">Camera</span>
+              <h2>Live Feed</h2>
+            </div>
+          </div>
+
+          <div className="video-frame-shell">
+            <div className="video-placeholder">
+              <p>Video feed not yet available</p>
+            </div>
+          </div>
+        </section>
       </section>
 
       <section className="status-card">
