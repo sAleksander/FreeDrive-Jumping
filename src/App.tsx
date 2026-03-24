@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 
-const checks = [
-  'Join the drone Wi-Fi on this Mac',
-  'Click connect and wait for ready state',
-  'Confirm a battery or posture event appears',
-  'Press W/A/S/D to drive and release the key to stop',
-];
-
 const keyMap: Record<string, DroneDriveCommand> = {
   w: 'forward',
   s: 'backward',
   a: 'left',
   d: 'right',
+};
+
+const activeInputLabels: Record<DroneDriveCommand, string> = {
+  forward: '"W"',
+  backward: '"S"',
+  left: '"A"',
+  right: '"D"',
 };
 
 const initialStatus: DroneStatus = {
@@ -106,146 +106,44 @@ function App() {
     }
   }
 
-  const statusTone = `phase-${status.phase}`;
+  const batteryLabel = status.battery === null ? 'Unknown' : `${status.battery}%`;
+  const currentInput = status.activeCommand
+    ? activeInputLabels[status.activeCommand]
+    : 'None';
+  const lastError = actionMessage ?? status.lastError ?? 'None';
 
   return (
-    <main className="app-shell">
-      <section className="hero-card">
-        <p className="eyebrow">Connectivity Spike</p>
-        <h1>FreeDrive Jumping</h1>
-        <p className="intro">
-          The app can now discover the drone, receive live state, and send
-          fixed-speed keyboard drive commands through the Electron backend.
-        </p>
-
-        <div className="runtime-grid">
-          <article>
-            <span className="label">Platform</span>
-            <strong>{runtime?.platform ?? 'browser preview'}</strong>
-          </article>
-          <article>
-            <span className="label">Electron</span>
-            <strong>{runtime?.versions.electron ?? 'not loaded'}</strong>
-          </article>
-          <article>
-            <span className="label">Node</span>
-            <strong>{runtime?.versions.node ?? 'not loaded'}</strong>
-          </article>
-          <article>
-            <span className="label">Chrome</span>
-            <strong>{runtime?.versions.chrome ?? 'not loaded'}</strong>
-          </article>
-        </div>
-
-        <div className="action-row">
-          <button
-            className="primary-button"
-            disabled={status.phase === 'connecting' || status.connected}
-            onClick={() => void runAction(() => droneApi!.connect())}
-            type="button"
-          >
-            {status.phase === 'connecting' ? 'Connecting...' : 'Connect'}
-          </button>
-          <button
-            className="secondary-button"
-            disabled={!status.connected && status.phase !== 'error'}
-            onClick={() => void runAction(() => droneApi!.disconnect())}
-            type="button"
-          >
-            Disconnect
-          </button>
-          <button
-            className="danger-button"
-            disabled={!status.connected}
-            onClick={() => void runAction(() => droneApi!.stop())}
-            type="button"
-          >
-            Stop
-          </button>
-        </div>
-
-        <section className="video-card">
-          <div className="video-header">
-            <div>
-              <span className="label">Camera</span>
-              <h2>Live Feed</h2>
-            </div>
-          </div>
-
-          <div className="video-frame-shell">
-            <div className="video-placeholder">
-              <p>Video feed not yet available</p>
-            </div>
-          </div>
-        </section>
+    <main>
+      <section className="status-view">
+        <p>Connected: {status.connected ? 'Yes' : 'No'}</p>
+        <p>Battery: {batteryLabel}</p>
+        <p>Current input: {currentInput}</p>
+        <p className="status-gap" />
+        <p>Last error: {lastError}</p>
       </section>
 
-      <section className="status-card">
-        <h2>Drone Status</h2>
-        <div className={`status-pill ${statusTone}`}>
-          <span className="label">Phase</span>
-          <strong>{status.phase}</strong>
-        </div>
-
-        <dl className="status-grid">
-          <div>
-            <dt>Connected</dt>
-            <dd>{status.connected ? 'Yes' : 'No'}</dd>
-          </div>
-          <div>
-            <dt>Battery</dt>
-            <dd>{status.battery === null ? 'Waiting' : `${status.battery}%`}</dd>
-          </div>
-          <div>
-            <dt>Posture</dt>
-            <dd>{status.posture ?? 'Unknown'}</dd>
-          </div>
-          <div>
-            <dt>Drive</dt>
-            <dd>{status.activeCommand ?? 'Stopped'}</dd>
-          </div>
-          <div>
-            <dt>Last update</dt>
-            <dd>
-              {status.updatedAt
-                ? new Date(status.updatedAt).toLocaleTimeString()
-                : 'None'}
-            </dd>
-          </div>
-        </dl>
-
-        <p className="message-line">
-          <strong>Last event:</strong> {status.lastEvent ?? 'No events yet'}
-        </p>
-        <p className="message-line error-line">
-          <strong>Last error:</strong> {actionMessage ?? status.lastError ?? 'None'}
-        </p>
-
-        <h2>Connectivity Checklist</h2>
-        <ul className="checklist">
-          {checks.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-
-        <div className="keys-card">
-          <span className="label">Keyboard</span>
-          <div className="keys-grid">
-            <kbd>W</kbd>
-            <kbd>A</kbd>
-            <kbd>S</kbd>
-            <kbd>D</kbd>
-          </div>
-          <p className="hint">
-            Release the key to stop. Switching tabs or blurring the window also
-            sends stop automatically.
-          </p>
-        </div>
-
-        <p className="hint">
-          This first driving mode is intentionally conservative: one direction
-          at a time, fixed speed, and explicit stop behavior.
-        </p>
+      <section className="controls">
+        <button
+          disabled={status.phase === 'connecting' || status.connected}
+          onClick={() => void runAction(() => droneApi!.connect())}
+          type="button"
+        >
+          Connect
+        </button>
+        <button
+          disabled={!status.connected && status.phase !== 'error'}
+          onClick={() => void runAction(() => droneApi!.disconnect())}
+          type="button"
+        >
+          Disconnect
+        </button>
+        <button
+          disabled={!status.connected}
+          onClick={() => void runAction(() => droneApi!.stop())}
+          type="button"
+        >
+          Stop
+        </button>
       </section>
     </main>
   );
