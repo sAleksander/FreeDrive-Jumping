@@ -16,7 +16,7 @@ npm run dev
 2. Start the app with `npm run dev`.
 3. Click `Connect` and wait for the app to report `connected`.
 4. Confirm that battery or posture events appear in the status panel.
-5. Press `W`, `A`, `S`, or `D` to drive at a fixed speed.
+5. Press and hold `W`, `A`, `S`, or `D` to keep driving at a fixed speed.
 6. Release the key or switch away from the window to trigger `Stop`.
 
 ## Build

@@ -118,6 +118,7 @@ function App() {
         <p>Connected: {status.connected ? 'Yes' : 'No'}</p>
         <p>Battery: {batteryLabel}</p>
         <p>Current input: {currentInput}</p>
+        <p>Drive mode: Hold key to keep moving</p>
         <p className="status-gap" />
         <p>Last error: {lastError}</p>
       </section>

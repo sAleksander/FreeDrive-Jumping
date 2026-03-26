@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { DroneController, type DroneStatus } from './drone-controller';
+import { DroneController, type DroneStatus } from './drone-controller/drone-controller';
 
 const droneController = new DroneController((status: DroneStatus) => {
   for (const window of BrowserWindow.getAllWindows()) {
