@@ -1,4 +1,17 @@
-import type { DroneControllerContext, DroneStatus } from './types';
+import type {
+  DroneControllerContext,
+  DroneDriveState,
+  DroneStatus,
+} from './types';
+
+export function createIdleDriveState(): DroneDriveState {
+  return {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+  };
+}
 
 export function createInitialStatus(): DroneStatus {
   return {
@@ -6,7 +19,7 @@ export function createInitialStatus(): DroneStatus {
     connected: false,
     battery: null,
     posture: null,
-    activeCommand: null,
+    activeCommands: [],
     lastEvent: null,
     lastError: null,
     updatedAt: null,

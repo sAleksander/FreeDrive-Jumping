@@ -1,17 +1,28 @@
 import { connectDrone } from './connect';
 import { disconnectDrone } from './disconnect';
-import { driveDrone } from './drive';
-import { createInitialStatus, getStatusSnapshot } from './state';
+import { driveDrone, setDriveState } from './drive';
+import {
+  createIdleDriveState,
+  createInitialStatus,
+  getStatusSnapshot,
+} from './state';
 import { stopDrone } from './stop';
 import type {
   DroneControllerContext,
   DroneDriveCommand,
+  DroneDriveState,
   DronePhase,
   DronePosture,
   DroneStatus,
 } from './types';
 
-export type { DroneDriveCommand, DronePhase, DronePosture, DroneStatus };
+export type {
+  DroneDriveCommand,
+  DroneDriveState,
+  DronePhase,
+  DronePosture,
+  DroneStatus,
+};
 
 export class DroneController {
   private readonly context: DroneControllerContext;
@@ -22,6 +33,7 @@ export class DroneController {
     this.context = {
       drone: null,
       status: createInitialStatus(),
+      driveState: createIdleDriveState(),
       driveSpeed: 30,
       driveLoop: null,
       driveRefreshIntervalMs: 25,
@@ -43,6 +55,10 @@ export class DroneController {
 
   async drive(command: DroneDriveCommand) {
     return driveDrone(this.context, command);
+  }
+
+  async setDriveState(driveState: DroneDriveState) {
+    return setDriveState(this.context, driveState);
   }
 
   async stop() {

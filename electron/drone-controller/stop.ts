@@ -1,6 +1,10 @@
 import { clearDriveLoop } from './drive';
 import { toErrorMessage } from './drone-controller-utils';
-import { getStatusSnapshot, publishStatus } from './state';
+import {
+  createIdleDriveState,
+  getStatusSnapshot,
+  publishStatus,
+} from './state';
 import type { DroneControllerContext, DroneStatus } from './types';
 
 export async function stopDrone(
@@ -12,9 +16,10 @@ export async function stopDrone(
 
   try {
     clearDriveLoop(context);
+    context.driveState = createIdleDriveState();
     context.drone.stop();
     publishStatus(context, {
-      activeCommand: null,
+      activeCommands: [],
       lastEvent: 'Stop command sent',
       lastError: null,
     });
@@ -22,11 +27,12 @@ export async function stopDrone(
   } catch (error) {
     const message = toErrorMessage(error, 'Failed to send the stop command.');
     clearDriveLoop(context);
+    context.driveState = createIdleDriveState();
 
     publishStatus(context, {
       phase: 'error',
       connected: false,
-      activeCommand: null,
+      activeCommands: [],
       lastError: message,
       lastEvent: 'Stop command failed',
     });

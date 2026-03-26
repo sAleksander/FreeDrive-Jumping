@@ -1,6 +1,10 @@
 import path from 'node:path';
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { DroneController, type DroneStatus } from './drone-controller/drone-controller';
+import {
+  DroneController,
+  type DroneDriveState,
+  type DroneStatus,
+} from './drone-controller/drone-controller';
 
 const droneController = new DroneController((status: DroneStatus) => {
   for (const window of BrowserWindow.getAllWindows()) {
@@ -37,6 +41,9 @@ function createMainWindow() {
 ipcMain.handle('drone:get-status', () => droneController.getStatus());
 ipcMain.handle('drone:connect', () => droneController.connect());
 ipcMain.handle('drone:disconnect', () => droneController.disconnect());
+ipcMain.handle('drone:set-drive-state', (_event, driveState: DroneDriveState) =>
+  droneController.setDriveState(driveState),
+);
 ipcMain.handle('drone:drive', (_event, command: 'forward' | 'backward' | 'left' | 'right') => droneController.drive(command));
 ipcMain.handle('drone:stop', () => droneController.stop());
 

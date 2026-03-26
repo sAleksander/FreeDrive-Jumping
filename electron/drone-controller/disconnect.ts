@@ -1,5 +1,10 @@
 import { clearDriveLoop } from './drive';
-import { createInitialStatus, getStatusSnapshot, publishStatus } from './state';
+import {
+  createIdleDriveState,
+  createInitialStatus,
+  getStatusSnapshot,
+  publishStatus,
+} from './state';
 import { teardownDrone } from './teardown';
 import type { DroneControllerContext, DroneStatus } from './types';
 
@@ -16,6 +21,7 @@ export async function disconnectDrone(
   }
 
   teardownDrone(context);
+  context.driveState = createIdleDriveState();
   publishStatus(context, {
     ...createInitialStatus(),
     lastEvent: 'Disconnected',

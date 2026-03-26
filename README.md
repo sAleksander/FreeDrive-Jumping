@@ -17,7 +17,8 @@ npm run dev
 3. Click `Connect` and wait for the app to report `connected`.
 4. Confirm that battery or posture events appear in the status panel.
 5. Press and hold `W`, `A`, `S`, or `D` to keep driving at a fixed speed.
-6. Release the key or switch away from the window to trigger `Stop`.
+6. Combine keys like `W` + `A` or `W` + `D` to steer while moving.
+7. Release the key or switch away from the window to trigger `Stop`.
 
 ## Build
 

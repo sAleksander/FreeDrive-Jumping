@@ -1,6 +1,10 @@
 import { toErrorMessage } from './drone-controller-utils';
 import { attachDroneListeners } from './events';
-import { getStatusSnapshot, publishStatus } from './state';
+import {
+  createIdleDriveState,
+  getStatusSnapshot,
+  publishStatus,
+} from './state';
 import { teardownDrone } from './teardown';
 import type {
   DroneControllerContext,
@@ -18,6 +22,7 @@ export async function connectDrone(
   }
 
   teardownDrone(context);
+  context.driveState = createIdleDriveState();
 
   const drone = sumo.createClient();
   context.drone = drone;
@@ -28,7 +33,7 @@ export async function connectDrone(
     connected: false,
     battery: null,
     posture: null,
-    activeCommand: null,
+    activeCommands: [],
     lastError: null,
     lastEvent: 'Starting discovery handshake',
   });
@@ -95,7 +100,7 @@ export async function connectDrone(
       connected: false,
       battery: null,
       posture: null,
-      activeCommand: null,
+      activeCommands: [],
       lastError: message,
       lastEvent: 'Connection failed',
     });

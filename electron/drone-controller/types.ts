@@ -10,13 +10,19 @@ export type DronePosture =
   | 'unknown'
   | null;
 export type DroneDriveCommand = 'forward' | 'backward' | 'left' | 'right';
+export interface DroneDriveState {
+  forward: boolean;
+  backward: boolean;
+  left: boolean;
+  right: boolean;
+}
 
 export interface DroneStatus {
   phase: DronePhase;
   connected: boolean;
   battery: number | null;
   posture: DronePosture;
-  activeCommand: DroneDriveCommand | null;
+  activeCommands: DroneDriveCommand[];
   lastEvent: string | null;
   lastError: string | null;
   updatedAt: string | null;
@@ -45,6 +51,7 @@ export interface NodeSumoModule {
 export interface DroneControllerContext {
   drone: NodeSumoClient | null;
   status: DroneStatus;
+  driveState: DroneDriveState;
   readonly driveSpeed: number;
   driveLoop: NodeJS.Timeout | null;
   readonly driveRefreshIntervalMs: number;

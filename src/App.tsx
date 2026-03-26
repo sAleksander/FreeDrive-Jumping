@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const keyMap: Record<string, DroneDriveCommand> = {
   w: 'forward',
@@ -14,12 +14,30 @@ const activeInputLabels: Record<DroneDriveCommand, string> = {
   right: '"D"',
 };
 
+function createIdleDriveState(): DroneDriveState {
+  return {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+  };
+}
+
+function toDriveState(heldCommands: Set<DroneDriveCommand>): DroneDriveState {
+  return {
+    forward: heldCommands.has('forward'),
+    backward: heldCommands.has('backward'),
+    left: heldCommands.has('left'),
+    right: heldCommands.has('right'),
+  };
+}
+
 const initialStatus: DroneStatus = {
   phase: 'idle',
   connected: false,
   battery: null,
   posture: null,
-  activeCommand: null,
+  activeCommands: [],
   lastEvent: null,
   lastError: null,
   updatedAt: null,
@@ -30,6 +48,7 @@ function App() {
   const droneApi = runtime?.drone;
   const [status, setStatus] = useState<DroneStatus>(initialStatus);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const heldCommandsRef = useRef<Set<DroneDriveCommand>>(new Set());
 
   useEffect(() => {
     if (!droneApi) {
@@ -47,15 +66,24 @@ function App() {
       return;
     }
 
+    const syncDriveState = () =>
+      runAction(() => droneApi.setDriveState(toDriveState(heldCommandsRef.current)));
+
     const handleKeyDown = (event: KeyboardEvent) => {
       const command = keyMap[event.key.toLowerCase()];
 
-      if (!command || event.repeat) {
+      if (!command) {
+        return;
+      }
+
+      if (heldCommandsRef.current.has(command)) {
+        event.preventDefault();
         return;
       }
 
       event.preventDefault();
-      void runAction(() => droneApi.drive(command));
+      heldCommandsRef.current.add(command);
+      void syncDriveState();
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -66,11 +94,13 @@ function App() {
       }
 
       event.preventDefault();
-      void runAction(() => droneApi.stop());
+      heldCommandsRef.current.delete(command);
+      void syncDriveState();
     };
 
     const handleVisibilityOrBlur = () => {
-      void runAction(() => droneApi.stop());
+      heldCommandsRef.current.clear();
+      void runAction(() => droneApi.setDriveState(createIdleDriveState()));
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -90,7 +120,8 @@ function App() {
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleVisibilityOrBlur);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      void droneApi.stop();
+      heldCommandsRef.current.clear();
+      void droneApi.setDriveState(createIdleDriveState());
     };
   }, [droneApi, status.connected]);
 
@@ -107,8 +138,8 @@ function App() {
   }
 
   const batteryLabel = status.battery === null ? 'Unknown' : `${status.battery}%`;
-  const currentInput = status.activeCommand
-    ? activeInputLabels[status.activeCommand]
+  const currentInput = status.activeCommands.length > 0
+    ? status.activeCommands.map((command) => activeInputLabels[command]).join(' + ')
     : 'None';
   const lastError = actionMessage ?? status.lastError ?? 'None';
 
