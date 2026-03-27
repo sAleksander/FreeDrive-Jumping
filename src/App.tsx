@@ -7,12 +7,8 @@ const keyMap: Record<string, DroneDriveCommand> = {
   d: 'right',
 };
 
-const activeInputLabels: Record<DroneDriveCommand, string> = {
-  forward: '"W"',
-  backward: '"S"',
-  left: '"A"',
-  right: '"D"',
-};
+const noiseFrameIntervalMs = 90;
+const noiseScaleDivisor = 4;
 
 function createIdleDriveState(): DroneDriveState {
   return {
@@ -47,8 +43,8 @@ function App() {
   const runtime = window.electronAPI;
   const droneApi = runtime?.drone;
   const [status, setStatus] = useState<DroneStatus>(initialStatus);
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const heldCommandsRef = useRef<Set<DroneDriveCommand>>(new Set());
+  const noiseCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     if (!droneApi) {
@@ -125,57 +121,160 @@ function App() {
     };
   }, [droneApi, status.connected]);
 
+  const hasVideoFeed = false;
+  const shouldShowNoiseCanvas = !status.connected || !hasVideoFeed;
+
+  useEffect(() => {
+    const canvas = noiseCanvasRef.current;
+
+    if (!canvas || !shouldShowNoiseCanvas) {
+      return;
+    }
+
+    const context = canvas.getContext('2d', { alpha: false });
+
+    if (!context) {
+      return;
+    }
+
+    let frameId = 0;
+    let timeoutId: number | null = null;
+    let imageData = context.createImageData(1, 1);
+
+    const resizeCanvas = () => {
+      const parent = canvas.parentElement;
+      const sourceWidth = parent?.clientWidth ?? window.innerWidth;
+      const sourceHeight = parent?.clientHeight ?? window.innerHeight;
+      const width = Math.max(240, Math.floor(sourceWidth / noiseScaleDivisor));
+      const height = Math.max(135, Math.floor(sourceHeight / noiseScaleDivisor));
+
+      canvas.width = width;
+      canvas.height = height;
+      imageData = context.createImageData(width, height);
+    };
+
+    const renderNoise = () => {
+      const { data } = imageData;
+
+      for (let index = 0; index < data.length; index += 4) {
+        const value = Math.random() > 0.985
+          ? 255
+          : Math.max(0, Math.min(255, 96 + Math.floor((Math.random() - 0.5) * 180)));
+
+        data[index] = value;
+        data[index + 1] = value;
+        data[index + 2] = value;
+        data[index + 3] = 255;
+      }
+
+      context.putImageData(imageData, 0, 0);
+      context.fillStyle = 'rgba(255, 255, 255, 0.16)';
+
+      const glitchBandCount = 2 + Math.floor(Math.random() * 4);
+
+      for (let bandIndex = 0; bandIndex < glitchBandCount; bandIndex += 1) {
+        const bandY = Math.floor(Math.random() * canvas.height);
+        const bandHeight = 1 + Math.floor(Math.random() * 4);
+
+        context.fillRect(0, bandY, canvas.width, bandHeight);
+      }
+
+      timeoutId = window.setTimeout(() => {
+        frameId = window.requestAnimationFrame(renderNoise);
+      }, noiseFrameIntervalMs);
+    };
+
+    resizeCanvas();
+    renderNoise();
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [shouldShowNoiseCanvas]);
+
   async function runAction(action: () => Promise<DroneStatus>) {
     try {
       const nextStatus = await action();
       setStatus(nextStatus);
-      setActionMessage(null);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Unexpected drone action error.';
-      setActionMessage(message);
+      console.error('Drone action failed.', error);
     }
   }
 
-  const batteryLabel = status.battery === null ? 'Unknown' : `${status.battery}%`;
-  const currentInput = status.activeCommands.length > 0
-    ? status.activeCommands.map((command) => activeInputLabels[command]).join(' + ')
-    : 'None';
-  const lastError = actionMessage ?? status.lastError ?? 'None';
+  const connectionButtonLabel = status.phase === 'connecting'
+    ? 'Connecting...'
+    : status.connected
+      ? 'Disconnect'
+      : status.phase === 'error'
+        ? 'Reset connection'
+        : 'Connect';
+  const batteryValue = status.connected && status.battery !== null
+    ? Math.max(0, Math.min(100, status.battery))
+    : null;
+  const batteryLabel = batteryValue === null ? '-//-' : `${batteryValue}%`;
+
+  const handleConnectionToggle = () => {
+    if (!droneApi || status.phase === 'connecting') {
+      return;
+    }
+
+    if (status.connected || status.phase === 'error') {
+      void runAction(() => droneApi.disconnect());
+      return;
+    }
+
+    void runAction(() => droneApi.connect());
+  };
 
   return (
-    <main>
-      <section className="status-view">
-        <p>Connected: {status.connected ? 'Yes' : 'No'}</p>
-        <p>Battery: {batteryLabel}</p>
-        <p>Current input: {currentInput}</p>
-        <p>Drive mode: Hold key to keep moving</p>
-        <p className="status-gap" />
-        <p>Last error: {lastError}</p>
-      </section>
+    <main className="fpv-app">
+      <section className="fpv-stage" aria-label="Drone camera view placeholder">
+        <canvas
+          aria-hidden="true"
+          className="fpv-stage__noise"
+          ref={noiseCanvasRef}
+        />
+        <div aria-hidden="true" className="fpv-stage__scanlines" />
+        <div aria-hidden="true" className="fpv-stage__vignette" />
 
-      <section className="controls">
-        <button
-          disabled={status.phase === 'connecting' || status.connected}
-          onClick={() => void runAction(() => droneApi!.connect())}
-          type="button"
+        <div aria-hidden="true" className="hud-crosshair">
+          <span className="hud-crosshair__corner hud-crosshair__corner--top-left" />
+          <span className="hud-crosshair__corner hud-crosshair__corner--top-right" />
+          <span className="hud-crosshair__corner hud-crosshair__corner--bottom-left" />
+          <span className="hud-crosshair__corner hud-crosshair__corner--bottom-right" />
+          <span className="hud-crosshair__ring" />
+          <span className="hud-crosshair__dot" />
+        </div>
+
+        <div className="top-control">
+          <button
+            className="control-button control-button--primary"
+            disabled={!droneApi || status.phase === 'connecting'}
+            onClick={handleConnectionToggle}
+            type="button"
+          >
+            {connectionButtonLabel}
+          </button>
+        </div>
+
+        <div
+          className={`battery-indicator${batteryValue === null ? ' battery-indicator--offline' : ''}`}
         >
-          Connect
-        </button>
-        <button
-          disabled={!status.connected && status.phase !== 'error'}
-          onClick={() => void runAction(() => droneApi!.disconnect())}
-          type="button"
-        >
-          Disconnect
-        </button>
-        <button
-          disabled={!status.connected}
-          onClick={() => void runAction(() => droneApi!.stop())}
-          type="button"
-        >
-          Stop
-        </button>
+          <div aria-hidden="true" className="battery-indicator__icon">
+            <span
+              className="battery-indicator__fill"
+              style={{ width: `${batteryValue ?? 0}%` }}
+            />
+          </div>
+          <span className="battery-indicator__value">{batteryLabel}</span>
+        </div>
       </section>
     </main>
   );
