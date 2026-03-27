@@ -1,3 +1,5 @@
+import styles from './BatteryIndicator.module.css';
+
 interface BatteryIndicatorProps {
   battery: number | null;
   connected: boolean;
@@ -12,18 +14,18 @@ export function BatteryIndicator({
     : null;
   const batteryLabel = batteryValue === null ? '-//-' : `${batteryValue}%`;
   const indicatorClassName = batteryValue === null
-    ? 'battery-indicator battery-indicator--offline'
-    : 'battery-indicator';
+    ? `${styles.indicator} ${styles.offline}`
+    : styles.indicator;
 
   return (
     <div className={indicatorClassName}>
-      <div aria-hidden="true" className="battery-indicator__icon">
+      <div aria-hidden="true" className={styles.icon}>
         <span
-          className="battery-indicator__fill"
+          className={styles.fill}
           style={{ width: `${batteryValue ?? 0}%` }}
         />
       </div>
-      <span className="battery-indicator__value">{batteryLabel}</span>
+      <span className={styles.value}>{batteryLabel}</span>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import styles from './ConnectionToggle.module.css';
+
 interface ConnectionToggleProps {
   disabled: boolean;
   label: string;
@@ -10,9 +12,9 @@ export function ConnectionToggle({
   onToggle,
 }: ConnectionToggleProps) {
   return (
-    <div className="top-control">
+    <div className={styles.topControl}>
       <button
-        className="control-button control-button--primary"
+        className={`${styles.button} ${styles.buttonPrimary}`}
         disabled={disabled}
         onClick={onToggle}
         type="button"

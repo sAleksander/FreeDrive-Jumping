@@ -1,0 +1,70 @@
+.indicator {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(184, 255, 99, 0.14);
+  border-radius: 999px;
+  background: rgba(7, 12, 9, 0.52);
+  backdrop-filter: blur(10px) saturate(125%);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.offline {
+  border-color: rgba(238, 247, 216, 0.08);
+}
+
+.icon {
+  position: relative;
+  width: 26px;
+  height: 13px;
+  border: 2px solid rgba(238, 247, 216, 0.92);
+  border-radius: 4px;
+}
+
+.icon::after {
+  position: absolute;
+  top: 50%;
+  right: -5px;
+  width: 3px;
+  height: 7px;
+  border-radius: 0 2px 2px 0;
+  background: rgba(238, 247, 216, 0.92);
+  content: '';
+  transform: translateY(-50%);
+}
+
+.fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(184, 255, 99, 0.92), rgba(215, 255, 136, 0.98));
+}
+
+.value {
+  min-width: 48px;
+  color: var(--hud-text);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.offline .icon,
+.offline .icon::after,
+.offline .value {
+  opacity: 0.75;
+}
+
+@media (max-width: 720px) {
+  .indicator {
+    bottom: 16px;
+  }
+}
