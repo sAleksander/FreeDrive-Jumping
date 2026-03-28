@@ -14,6 +14,7 @@ import type {
   DronePhase,
   DronePosture,
   DroneStatus,
+  DroneVideoMetrics,
 } from './types';
 
 export type {
@@ -22,6 +23,7 @@ export type {
   DronePhase,
   DronePosture,
   DroneStatus,
+  DroneVideoMetrics,
 };
 
 export class DroneController {
@@ -29,6 +31,8 @@ export class DroneController {
 
   constructor(
     private readonly onStatusChange: (status: DroneStatus) => void,
+    private readonly onVideoFrame: (frame: Buffer) => void,
+    private readonly onVideoMetrics: (metrics: DroneVideoMetrics) => void,
   ) {
     this.context = {
       drone: null,
@@ -37,7 +41,32 @@ export class DroneController {
       driveSpeed: 30,
       driveLoop: null,
       driveRefreshIntervalMs: 25,
+      videoWatchdog: null,
+      videoRestartTimeout: null,
+      videoLastFrameAt: null,
+      videoLastDeliveredAt: null,
+      videoMetricsLoop: null,
+      videoSourceFrames: 0,
+      videoDeliveredFrames: 0,
+      videoRestartCount: 0,
+      videoReceivedFragments: 0,
+      videoIncompleteFrames: 0,
+      videoMissingFragments: 0,
+      videoCurrentFrameNumber: null,
+      videoCurrentFrameExpectedFragments: 0,
+      videoCurrentFrameFragments: null,
+      videoWarmupUntil: null,
+      videoLastRestartAt: null,
+      videoFrameIntervalMs: 33,
+      videoStallTimeoutMs: 1_500,
+      videoRestartDelayMs: 250,
+      videoWarmupDurationMs: 3_000,
+      videoHighLatencyThresholdMs: 900,
+      videoLowFpsThreshold: 2,
+      videoRestartCooldownMs: 4_000,
       onStatusChange: this.onStatusChange,
+      onVideoFrame: this.onVideoFrame,
+      onVideoMetrics: this.onVideoMetrics,
     };
   }
 

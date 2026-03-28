@@ -32,7 +32,9 @@ function sendDriveState(
   const turnDirection = Number(driveState.right) - Number(driveState.left);
 
   if (verticalDirection === 0 && turnDirection === 0) {
-    context.drone.stop();
+    // Keep sending neutral PCMD packets while connected so the session
+    // stays alive even when the drone is stationary.
+    context.drone.forward(0);
     return;
   }
 
@@ -85,8 +87,7 @@ function ensureDriveLoop(context: DroneControllerContext) {
   context.driveLoop = setInterval(() => {
     if (
       !context.drone ||
-      !context.status.connected ||
-      context.status.activeCommands.length === 0
+      !context.status.connected
     ) {
       clearDriveLoop(context);
       return;
@@ -96,9 +97,12 @@ function ensureDriveLoop(context: DroneControllerContext) {
       sendDriveState(context, context.driveState);
     } catch (error) {
       const activeCommands = [...context.status.activeCommands];
+      const label = activeCommands.length > 0
+        ? activeCommands.join(' + ')
+        : 'idle keepalive';
       const message = toErrorMessage(
         error,
-        `Failed to refresh the ${activeCommands.join(' + ')} command.`,
+        `Failed to refresh the ${label} command.`,
       );
 
       clearDriveLoop(context);
@@ -123,6 +127,10 @@ export function clearDriveLoop(context: DroneControllerContext) {
   context.driveLoop = null;
 }
 
+export function startDriveLoop(context: DroneControllerContext) {
+  ensureDriveLoop(context);
+}
+
 export async function setDriveState(
   context: DroneControllerContext,
   driveState: DroneDriveState,
@@ -140,14 +148,32 @@ export async function setDriveState(
   context.driveState = { ...driveState };
 
   if (activeCommands.length === 0) {
-    clearDriveLoop(context);
-    context.drone.stop();
-    publishStatus(context, {
-      activeCommands: [],
-      lastEvent: 'Stop command sent',
-      lastError: null,
-    });
-    return getStatusSnapshot(context);
+    try {
+      sendDriveState(context, driveState);
+      ensureDriveLoop(context);
+      publishStatus(context, {
+        activeCommands: [],
+        lastEvent: 'Idle keepalive active',
+        lastError: null,
+      });
+      return getStatusSnapshot(context);
+    } catch (error) {
+      const message = toErrorMessage(
+        error,
+        'Failed to send the idle keepalive command.',
+      );
+
+      clearDriveLoop(context);
+      context.driveState = createIdleDriveState();
+      publishStatus(context, {
+        phase: 'error',
+        connected: false,
+        activeCommands: [],
+        lastError: message,
+        lastEvent: 'Idle keepalive failed',
+      });
+      throw new Error(message);
+    }
   }
 
   if (isUnchanged) {

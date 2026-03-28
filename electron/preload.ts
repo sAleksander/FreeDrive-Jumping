@@ -16,6 +16,29 @@ export interface DroneStatus {
   updatedAt: string | null;
 }
 
+export interface DroneVideoMetrics {
+  sourceFps: number;
+  deliveredFps: number;
+  restartCount: number;
+  lastFrameAgeMs: number | null;
+  receivedFragments: number;
+  incompleteFrames: number;
+  missingFragments: number;
+}
+
+export interface ExportedDiagnosticsLog {
+  path: string;
+}
+
+export interface RendererVideoDiagnostics {
+  sourceFps: number;
+  deliveredFps: number;
+  renderedFps: number;
+  restartCount: number;
+  lastFrameAgeMs: number | null;
+  streamState: string;
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   versions: {
@@ -44,6 +67,46 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => {
         ipcRenderer.removeListener('drone:status', subscription);
       };
+    },
+    onVideoFrame: (listener: (frame: Uint8Array) => void) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        frame: ArrayBuffer | Uint8Array,
+      ) => {
+        if (frame instanceof ArrayBuffer) {
+          listener(new Uint8Array(frame));
+          return;
+        }
+
+        listener(
+          new Uint8Array(frame.buffer, frame.byteOffset, frame.byteLength),
+        );
+      };
+
+      ipcRenderer.on('drone:video-frame', subscription);
+      return () => {
+        ipcRenderer.removeListener('drone:video-frame', subscription);
+      };
+    },
+    onVideoMetrics: (listener: (metrics: DroneVideoMetrics) => void) => {
+      const subscription = (
+        _event: Electron.IpcRendererEvent,
+        metrics: DroneVideoMetrics,
+      ) => {
+        listener(metrics);
+      };
+
+      ipcRenderer.on('drone:video-metrics', subscription);
+      return () => {
+        ipcRenderer.removeListener('drone:video-metrics', subscription);
+      };
+    },
+  },
+  diagnostics: {
+    exportLog: () =>
+      ipcRenderer.invoke('diagnostics:export-log') as Promise<ExportedDiagnosticsLog>,
+    reportVideoDiagnostics: (diagnostics: RendererVideoDiagnostics) => {
+      ipcRenderer.send('diagnostics:video-renderer', diagnostics);
     },
   },
 });

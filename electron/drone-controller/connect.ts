@@ -1,4 +1,5 @@
 import { toErrorMessage } from './drone-controller-utils';
+import { startDriveLoop } from './drive';
 import { attachDroneListeners } from './events';
 import {
   createIdleDriveState,
@@ -6,6 +7,10 @@ import {
   publishStatus,
 } from './state';
 import { teardownDrone } from './teardown';
+import {
+  attachVideoListeners,
+  startVideoPipeline,
+} from './video';
 import type {
   DroneControllerContext,
   DroneStatus,
@@ -27,6 +32,7 @@ export async function connectDrone(
   const drone = sumo.createClient();
   context.drone = drone;
   attachDroneListeners(context, drone);
+  attachVideoListeners(context, drone);
 
   publishStatus(context, {
     phase: 'connecting',
@@ -70,6 +76,8 @@ export async function connectDrone(
             lastError: null,
             lastEvent: 'Drone ready for commands',
           });
+          startDriveLoop(context);
+          startVideoPipeline(context);
           resolve();
         });
       });

@@ -17,6 +17,29 @@ declare global {
     updatedAt: string | null;
   }
 
+  interface DroneVideoMetrics {
+    sourceFps: number;
+    deliveredFps: number;
+    restartCount: number;
+    lastFrameAgeMs: number | null;
+    receivedFragments: number;
+    incompleteFrames: number;
+    missingFragments: number;
+  }
+
+  interface ExportedDiagnosticsLog {
+    path: string;
+  }
+
+  interface RendererVideoDiagnostics {
+    sourceFps: number;
+    deliveredFps: number;
+    renderedFps: number;
+    restartCount: number;
+    lastFrameAgeMs: number | null;
+    streamState: string;
+  }
+
   interface Window {
     electronAPI?: {
       platform: string;
@@ -33,6 +56,14 @@ declare global {
         drive: (command: DroneDriveCommand) => Promise<DroneStatus>;
         stop: () => Promise<DroneStatus>;
         onStatus: (listener: (status: DroneStatus) => void) => () => void;
+        onVideoFrame: (listener: (frame: Uint8Array) => void) => () => void;
+        onVideoMetrics: (
+          listener: (metrics: DroneVideoMetrics) => void,
+        ) => () => void;
+      };
+      diagnostics: {
+        exportLog: () => Promise<ExportedDiagnosticsLog>;
+        reportVideoDiagnostics: (diagnostics: RendererVideoDiagnostics) => void;
       };
     };
   }

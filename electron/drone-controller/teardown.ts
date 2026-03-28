@@ -4,10 +4,12 @@ import {
   destroyNetSocket,
 } from './drone-controller-utils';
 import { createIdleDriveState } from './state';
+import { stopVideoPipeline } from './video';
 import type { DroneControllerContext } from './types';
 
 export function teardownDrone(context: DroneControllerContext) {
   clearDriveLoop(context);
+  stopVideoPipeline(context);
   context.driveState = createIdleDriveState();
 
   if (!context.drone) {
