@@ -30,6 +30,9 @@ function sendDriveState(
   const verticalDirection =
     Number(driveState.forward) - Number(driveState.backward);
   const turnDirection = Number(driveState.right) - Number(driveState.left);
+  const effectiveTurnDirection = verticalDirection < 0
+    ? -turnDirection
+    : turnDirection;
 
   if (verticalDirection === 0 && turnDirection === 0) {
     // Keep sending neutral PCMD packets while connected so the session
@@ -46,9 +49,9 @@ function sendDriveState(
     context.drone.forward(0);
   }
 
-  if (turnDirection > 0) {
+  if (effectiveTurnDirection > 0) {
     context.drone.right(context.driveSpeed);
-  } else if (turnDirection < 0) {
+  } else if (effectiveTurnDirection < 0) {
     context.drone.left(context.driveSpeed);
   }
 }
