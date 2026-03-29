@@ -36,6 +36,9 @@ const droneController = new DroneController(
 
     sessionLogger.log('video.metrics.backend', metrics);
   },
+  (event: string, data?: unknown) => {
+    sessionLogger.log(event, data);
+  },
 );
 
 function createMainWindow() {

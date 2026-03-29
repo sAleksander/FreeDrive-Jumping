@@ -1,0 +1,87 @@
+.toggle {
+  position: absolute;
+  bottom: 22px;
+  left: 22px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(184, 255, 99, 0.14);
+  border-radius: 999px;
+  background: rgba(7, 12, 9, 0.58);
+  color: var(--hud-text);
+  backdrop-filter: blur(10px) saturate(125%);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease,
+    opacity 140ms ease;
+}
+
+.toggle:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.track {
+  position: relative;
+  width: 42px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(238, 247, 216, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(238, 247, 216, 0.95);
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.label {
+  min-width: 92px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.armed {
+  border-color: rgba(184, 255, 99, 0.32);
+}
+
+.armed .track {
+  background: rgba(184, 255, 99, 0.3);
+}
+
+.armed .thumb {
+  transform: translateX(20px);
+  background: rgba(215, 255, 136, 0.98);
+  box-shadow: 0 0 12px rgba(184, 255, 99, 0.34);
+}
+
+.disarmed {
+  border-color: rgba(238, 247, 216, 0.12);
+}
+
+@media (max-width: 720px) {
+  .toggle {
+    bottom: 16px;
+    left: 14px;
+  }
+}

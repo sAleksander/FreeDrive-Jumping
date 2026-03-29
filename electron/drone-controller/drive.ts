@@ -19,6 +19,10 @@ function getActiveCommands(driveState: DroneDriveState): DroneDriveCommand[] {
   );
 }
 
+function isDriveBlockedByPosture(context: DroneControllerContext) {
+  return context.status.posture === 'stuck';
+}
+
 function sendDriveState(
   context: DroneControllerContext,
   driveState: DroneDriveState,
@@ -134,6 +138,48 @@ export function startDriveLoop(context: DroneControllerContext) {
   ensureDriveLoop(context);
 }
 
+export function engageStuckDriveSafety(context: DroneControllerContext) {
+  const activeCommandsBeforeStop = [...context.status.activeCommands];
+  const driveStateBeforeStop = { ...context.driveState };
+  context.driveState = createIdleDriveState();
+
+  context.onDiagnosticEvent('drive.safety.stuck.engaged', {
+    posture: context.status.posture,
+    activeCommandsBeforeStop,
+    driveStateBeforeStop,
+    connected: context.status.connected,
+  });
+
+  if (!context.drone || !context.status.connected) {
+    publishStatus(context, {
+      activeCommands: [],
+      lastError: null,
+      lastEvent: 'Drone reports it is stuck; drive commands blocked',
+    });
+    return;
+  }
+
+  try {
+    context.drone.stop();
+  } catch {
+    // Best effort immediate stop for old library internals.
+  }
+
+  try {
+    sendDriveState(context, context.driveState);
+    ensureDriveLoop(context);
+  } catch {
+    // If neutral keepalive fails here, the regular refresh loop/error path
+    // will surface the connection problem on the next tick.
+  }
+
+  publishStatus(context, {
+    activeCommands: [],
+    lastError: null,
+    lastEvent: 'Drone reports it is stuck; drive commands blocked',
+  });
+}
+
 export async function setDriveState(
   context: DroneControllerContext,
   driveState: DroneDriveState,
@@ -147,6 +193,43 @@ export async function setDriveState(
   const isUnchanged =
     activeCommands.length === currentCommands.length &&
     activeCommands.every((command, index) => command === currentCommands[index]);
+
+  if (isDriveBlockedByPosture(context) && activeCommands.length > 0) {
+    context.driveState = createIdleDriveState();
+    context.onDiagnosticEvent('drive.command.blocked.stuck', {
+      posture: context.status.posture,
+      requestedCommands: activeCommands,
+      requestedDriveState: { ...driveState },
+      connected: context.status.connected,
+    });
+
+    try {
+      sendDriveState(context, context.driveState);
+      ensureDriveLoop(context);
+      publishStatus(context, {
+        activeCommands: [],
+        lastError: null,
+        lastEvent: 'Drive command ignored while drone is stuck',
+      });
+      return getStatusSnapshot(context);
+    } catch (error) {
+      const message = toErrorMessage(
+        error,
+        'Failed to keep the drone idle while it is stuck.',
+      );
+
+      clearDriveLoop(context);
+      context.driveState = createIdleDriveState();
+      publishStatus(context, {
+        phase: 'error',
+        connected: false,
+        activeCommands: [],
+        lastError: message,
+        lastEvent: 'Stuck safety keepalive failed',
+      });
+      throw new Error(message);
+    }
+  }
 
   context.driveState = { ...driveState };
 

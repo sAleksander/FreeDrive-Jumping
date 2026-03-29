@@ -1,12 +1,12 @@
 const keyMap: Record<string, DroneDriveCommand> = {
-  w: 'forward',
-  s: 'backward',
-  a: 'left',
-  d: 'right',
+  ArrowUp: 'forward',
+  ArrowDown: 'backward',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
 };
 
 export function getDriveCommandForKey(key: string): DroneDriveCommand | null {
-  return keyMap[key.toLowerCase()] ?? null;
+  return keyMap[key] ?? null;
 }
 
 export function createIdleDriveState(): DroneDriveState {

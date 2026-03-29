@@ -1,5 +1,34 @@
+import { engageStuckDriveSafety } from './drive';
 import { publishStatus } from './state';
-import type { DroneControllerContext, NodeSumoClient } from './types';
+import type { DroneControllerContext, DronePosture, NodeSumoClient } from './types';
+
+function publishPostureEvent(
+  context: DroneControllerContext,
+  posture: DronePosture,
+  lastEvent: string,
+) {
+  const previousPosture = context.status.posture;
+
+  publishStatus(context, {
+    posture,
+    lastEvent,
+  });
+
+  context.onDiagnosticEvent('drone.posture.event', {
+    previousPosture,
+    nextPosture: posture,
+    activeCommands: [...context.status.activeCommands],
+    driveState: { ...context.driveState },
+    connected: context.status.connected,
+  });
+
+  if (previousPosture === 'stuck' && posture !== 'stuck') {
+    context.onDiagnosticEvent('drive.safety.stuck.cleared', {
+      nextPosture: posture,
+      connected: context.status.connected,
+    });
+  }
+}
 
 export function attachDroneListeners(
   context: DroneControllerContext,
@@ -27,37 +56,23 @@ export function attachDroneListeners(
   });
 
   drone.on('postureStanding', () => {
-    publishStatus(context, {
-      posture: 'standing',
-      lastEvent: 'Posture changed to standing',
-    });
+    publishPostureEvent(context, 'standing', 'Posture changed to standing');
   });
 
   drone.on('postureJumper', () => {
-    publishStatus(context, {
-      posture: 'jumper',
-      lastEvent: 'Posture changed to jumper',
-    });
+    publishPostureEvent(context, 'jumper', 'Posture changed to jumper');
   });
 
   drone.on('postureKicker', () => {
-    publishStatus(context, {
-      posture: 'kicker',
-      lastEvent: 'Posture changed to kicker',
-    });
+    publishPostureEvent(context, 'kicker', 'Posture changed to kicker');
   });
 
   drone.on('postureStuck', () => {
-    publishStatus(context, {
-      posture: 'stuck',
-      lastEvent: 'Drone reports it is stuck',
-    });
+    publishPostureEvent(context, 'stuck', 'Drone reports it is stuck');
+    engageStuckDriveSafety(context);
   });
 
   drone.on('postureUnknown', () => {
-    publishStatus(context, {
-      posture: 'unknown',
-      lastEvent: 'Drone posture is unknown',
-    });
+    publishPostureEvent(context, 'unknown', 'Drone posture is unknown');
   });
 }

@@ -87,15 +87,24 @@ export class SessionLogger {
 
     await this.writeChain;
 
+    const rawLog = await fs.readFile(this.logFilePath, 'utf8');
+    const entries = rawLog
+      .split('\n')
+      .filter((line) => line.trim().length > 0)
+      .map((line) => JSON.parse(line) as LogEntry);
+
     const downloadsDirectory = app.getPath('downloads');
+    const logBaseName = path.basename(this.logFilePath, path.extname(this.logFilePath));
     const exportPath = await createUniqueFilePath(
-      path.join(downloadsDirectory, path.basename(this.logFilePath)),
+      path.join(downloadsDirectory, `${logBaseName}.json`),
     );
 
-    await fs.copyFile(this.logFilePath, exportPath);
+    await fs.writeFile(exportPath, `${JSON.stringify(entries, null, 2)}\n`, 'utf8');
 
     this.log('session.exported', {
       exportPath,
+      format: 'json',
+      entryCount: entries.length,
     });
 
     return {

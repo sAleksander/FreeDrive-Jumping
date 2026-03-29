@@ -107,6 +107,7 @@ export interface DroneControllerContext {
   readonly videoHighLatencyThresholdMs: number;
   readonly videoLowFpsThreshold: number;
   readonly videoRestartCooldownMs: number;
+  readonly onDiagnosticEvent: (event: string, data?: unknown) => void;
   readonly onStatusChange: (status: DroneStatus) => void;
   readonly onVideoFrame: (frame: Buffer) => void;
   readonly onVideoMetrics: (metrics: DroneVideoMetrics) => void;

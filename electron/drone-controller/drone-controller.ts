@@ -33,6 +33,7 @@ export class DroneController {
     private readonly onStatusChange: (status: DroneStatus) => void,
     private readonly onVideoFrame: (frame: Buffer) => void,
     private readonly onVideoMetrics: (metrics: DroneVideoMetrics) => void,
+    private readonly onDiagnosticEvent: (event: string, data?: unknown) => void,
   ) {
     this.context = {
       drone: null,
@@ -64,6 +65,7 @@ export class DroneController {
       videoHighLatencyThresholdMs: 900,
       videoLowFpsThreshold: 2,
       videoRestartCooldownMs: 4_000,
+      onDiagnosticEvent: this.onDiagnosticEvent,
       onStatusChange: this.onStatusChange,
       onVideoFrame: this.onVideoFrame,
       onVideoMetrics: this.onVideoMetrics,
