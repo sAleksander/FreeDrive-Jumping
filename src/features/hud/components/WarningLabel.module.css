@@ -3,40 +3,83 @@
   top: 50%;
   left: 50%;
   z-index: 2;
-  min-width: 140px;
-  max-width: min(56vw, 320px);
-  padding: 0.45rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  max-width: min(72vw, 420px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 0.96rem;
+  font-weight: 800;
   letter-spacing: 0.14em;
   line-height: 1;
   text-align: center;
   text-transform: uppercase;
   transform: translate(-50%, calc(-50% - 58px));
-  backdrop-filter: blur(14px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
+  white-space: nowrap;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.88);
+  paint-order: stroke fill;
   pointer-events: none;
 }
 
-.warning {
-  color: #12180b;
-  background: rgba(215, 255, 136, 0.92);
-  border-color: rgba(215, 255, 136, 0.45);
+.positionCritical,
+.previewCritical {
+  transform: translate(-50%, calc(-100% - 34px));
 }
 
-.error {
-  color: #fff5eb;
-  background: rgba(182, 44, 31, 0.88);
-  border-color: rgba(255, 152, 118, 0.42);
+.positionInfo,
+.previewInfo {
+  transform: translate(-50%, 34px);
+}
+
+.info {
+  color: rgba(248, 250, 252, 0.96);
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.22),
+    0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.warning {
+  color: rgba(255, 180, 82, 0.96);
+  text-shadow:
+    0 0 8px rgba(255, 180, 82, 0.2),
+    0 1px 2px rgba(0, 0, 0, 0.92);
+  animation: alertBlink 820ms steps(1, end) infinite;
+}
+
+.critical {
+  color: rgba(255, 85, 70, 0.98);
+  text-shadow:
+    0 0 9px rgba(255, 85, 70, 0.24),
+    0 1px 2px rgba(0, 0, 0, 0.94);
+  animation: alertBlink 820ms steps(1, end) infinite;
+}
+
+@keyframes alertBlink {
+  0%,
+  52% {
+    opacity: 1;
+  }
+
+  53%,
+  100% {
+    opacity: 0.28;
+  }
 }
 
 @media (max-width: 720px) {
   .label {
-    min-width: 124px;
-    max-width: min(74vw, 280px);
-    font-size: 0.72rem;
-    transform: translate(-50%, calc(-50% - 54px));
+    max-width: min(84vw, 320px);
+    font-size: 0.84rem;
   }
+
+  .positionCritical,
+  .previewCritical {
+    transform: translate(-50%, calc(-100% - 30px));
+  }
+
+  .positionInfo,
+  .previewInfo {
+    transform: translate(-50%, 30px);
+  }
+
 }

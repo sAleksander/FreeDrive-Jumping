@@ -1,4 +1,4 @@
-export type DroneHudAlertTone = 'warning' | 'error';
+export type DroneHudAlertTone = 'info' | 'warning' | 'critical';
 
 export interface DroneHudAlert {
   message: string;
@@ -16,7 +16,7 @@ export function getDroneHudAlert(status: DroneStatus): DroneHudAlert | null {
   if (status.phase === 'error') {
     return {
       message: status.lastError ? 'Connection error' : 'Drone error',
-      tone: 'error',
+      tone: 'critical',
     };
   }
 

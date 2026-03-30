@@ -42,7 +42,7 @@ function App() {
         disabled={!status.connected}
         onToggle={toggleArmed}
       />
-      <WarningLabel alert={hudAlert} />
+      <WarningLabel alert={hudAlert} preview />
       <Crosshair />
       <ConnectionToggle
         disabled={!droneApiAvailable || status.phase === 'connecting'}
