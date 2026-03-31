@@ -5,18 +5,50 @@ export interface DroneHudAlert {
   tone: DroneHudAlertTone;
 }
 
-export function getDroneHudAlert(status: DroneStatus): DroneHudAlert | null {
-  if (status.posture === 'stuck') {
-    return {
-      message: 'Drone stuck',
-      tone: 'warning',
-    };
+export function getDroneHudAlert(
+  status: DroneStatus,
+  hasConnectedOnce: boolean,
+): DroneHudAlert | null {
+  if (status.connected && status.battery !== null) {
+    if (status.battery <= 10) {
+      return {
+        message: 'Battery Critical!',
+        tone: 'critical',
+      };
+    }
+
+    if (status.battery <= 20) {
+      return {
+        message: 'Low Battery',
+        tone: 'warning',
+      };
+    }
+  }
+
+  if (status.phase === 'connecting') {
+    return null;
   }
 
   if (status.phase === 'error') {
     return {
-      message: status.lastError ? 'Connection error' : 'Drone error',
-      tone: 'critical',
+      message: hasConnectedOnce
+        ? 'Drone connection lost'
+        : 'Connect to your Parrot Jumping drone',
+      tone: 'info',
+    };
+  }
+
+  if (!status.connected) {
+    return {
+      message: 'Connect to your Parrot Jumping drone',
+      tone: 'info',
+    };
+  }
+
+  if (status.posture === 'stuck') {
+    return {
+      message: 'Drone stuck',
+      tone: 'warning',
     };
   }
 

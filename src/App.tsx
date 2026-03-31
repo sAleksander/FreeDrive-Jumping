@@ -16,6 +16,7 @@ function App() {
   const {
     connectionButtonLabel,
     droneApiAvailable,
+    hasConnectedOnce,
     runAction,
     status,
     toggleConnection,
@@ -25,7 +26,7 @@ function App() {
   const shouldShowNoiseCanvas = !status.connected || !showVideo;
   const noiseCanvasRef = useRxNoiseCanvas(shouldShowNoiseCanvas);
   const { armed, toggleArmed } = useArmingState(status.connected);
-  const hudAlert = getDroneHudAlert(status);
+  const hudAlert = getDroneHudAlert(status, hasConnectedOnce);
 
   useDriveKeyboard(status.connected, runAction);
 
@@ -42,7 +43,7 @@ function App() {
         disabled={!status.connected}
         onToggle={toggleArmed}
       />
-      <WarningLabel alert={hudAlert} preview />
+      <WarningLabel alert={hudAlert} />
       <Crosshair />
       <ConnectionToggle
         disabled={!droneApiAvailable || status.phase === 'connecting'}

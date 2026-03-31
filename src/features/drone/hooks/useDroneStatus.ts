@@ -5,6 +5,7 @@ import type { DroneAction, DroneApi, RunDroneAction } from '../types';
 interface UseDroneStatusResult {
   connectionButtonLabel: string;
   droneApiAvailable: boolean;
+  hasConnectedOnce: boolean;
   runAction: RunDroneAction;
   status: DroneStatus;
   toggleConnection: () => void;
@@ -29,6 +30,7 @@ function getConnectionButtonLabel(status: DroneStatus): string {
 export function useDroneStatus(): UseDroneStatusResult {
   const droneApi = window.electronAPI?.drone;
   const [status, setStatus] = useState<DroneStatus>(initialDroneStatus);
+  const [hasConnectedOnce, setHasConnectedOnce] = useState(false);
 
   useEffect(() => {
     if (!droneApi) {
@@ -40,6 +42,12 @@ export function useDroneStatus(): UseDroneStatusResult {
 
     return unsubscribe;
   }, [droneApi]);
+
+  useEffect(() => {
+    if (status.connected) {
+      setHasConnectedOnce(true);
+    }
+  }, [status.connected]);
 
   const runAction = useCallback<RunDroneAction>(
     async (action: DroneAction) => {
@@ -78,6 +86,7 @@ export function useDroneStatus(): UseDroneStatusResult {
   return {
     connectionButtonLabel,
     droneApiAvailable: Boolean(droneApi),
+    hasConnectedOnce,
     runAction,
     status,
     toggleConnection,
