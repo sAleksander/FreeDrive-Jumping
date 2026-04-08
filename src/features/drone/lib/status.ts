@@ -1,6 +1,7 @@
 export const initialDroneStatus: DroneStatus = {
   phase: 'idle',
   connected: false,
+  armed: false,
   battery: null,
   posture: null,
   activeCommands: [],

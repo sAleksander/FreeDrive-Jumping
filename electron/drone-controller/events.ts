@@ -1,4 +1,3 @@
-import { engageStuckDriveSafety } from './drive';
 import { publishStatus } from './state';
 import type { DroneControllerContext, DronePosture, NodeSumoClient } from './types';
 
@@ -21,13 +20,6 @@ function publishPostureEvent(
     driveState: { ...context.driveState },
     connected: context.status.connected,
   });
-
-  if (previousPosture === 'stuck' && posture !== 'stuck') {
-    context.onDiagnosticEvent('drive.safety.stuck.cleared', {
-      nextPosture: posture,
-      connected: context.status.connected,
-    });
-  }
 }
 
 export function attachDroneListeners(
@@ -69,7 +61,6 @@ export function attachDroneListeners(
 
   drone.on('postureStuck', () => {
     publishPostureEvent(context, 'stuck', 'Drone reports it is stuck');
-    engageStuckDriveSafety(context);
   });
 
   drone.on('postureUnknown', () => {

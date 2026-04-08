@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import {
-  createIdleDriveState,
+  getDriveSpeedFromModifiers,
   getDriveCommandForKey,
   toDriveState,
 } from '../lib/driveState';
@@ -8,24 +8,57 @@ import type { RunDroneAction } from '../types';
 
 export function useDriveKeyboard(
   connected: boolean,
+  armed: boolean,
   runAction: RunDroneAction,
 ) {
   const heldCommandsRef = useRef<Set<DroneDriveCommand>>(new Set());
+  const modifiersRef = useRef({
+    slow: false,
+    shift: false,
+  });
 
   useEffect(() => {
-    if (!connected) {
+    if (!connected || !armed) {
       return;
     }
 
     const syncDriveState = () =>
-      runAction((drone) => drone.setDriveState(toDriveState(heldCommandsRef.current)));
+      runAction((drone) =>
+        drone.setDriveState(
+          toDriveState(
+            heldCommandsRef.current,
+            getDriveSpeedFromModifiers(modifiersRef.current),
+          ),
+        ));
 
     const clearDriveState = () => {
       heldCommandsRef.current.clear();
-      void runAction((drone) => drone.setDriveState(createIdleDriveState()));
+      modifiersRef.current = {
+        slow: false,
+        shift: false,
+      };
+      void runAction((drone) => drone.stop());
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === 'KeyC' || event.key === 'Shift') {
+        const nextModifiers = {
+          slow: modifiersRef.current.slow || event.code === 'KeyC',
+          shift: event.shiftKey || event.key === 'Shift',
+        };
+        const changed =
+          nextModifiers.slow !== modifiersRef.current.slow ||
+          nextModifiers.shift !== modifiersRef.current.shift;
+
+        modifiersRef.current = nextModifiers;
+
+        if (changed && heldCommandsRef.current.size > 0) {
+          event.preventDefault();
+          void syncDriveState();
+        }
+        return;
+      }
+
       const command = getDriveCommandForKey(event.key);
 
       if (!command) {
@@ -43,6 +76,19 @@ export function useDriveKeyboard(
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code === 'KeyC' || event.key === 'Shift') {
+        modifiersRef.current = {
+          slow: event.code !== 'KeyC' && modifiersRef.current.slow,
+          shift: event.shiftKey && event.key !== 'Shift',
+        };
+
+        if (heldCommandsRef.current.size > 0) {
+          event.preventDefault();
+          void syncDriveState();
+        }
+        return;
+      }
+
       const command = getDriveCommandForKey(event.key);
 
       if (!command) {
@@ -72,5 +118,17 @@ export function useDriveKeyboard(
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearDriveState();
     };
-  }, [connected, runAction]);
+  }, [armed, connected, runAction]);
+
+  useEffect(() => {
+    if (connected && armed) {
+      return;
+    }
+
+    heldCommandsRef.current.clear();
+    modifiersRef.current = {
+      slow: false,
+      shift: false,
+    };
+  }, [armed, connected]);
 }

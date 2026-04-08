@@ -8,6 +8,7 @@ interface UseDroneStatusResult {
   hasConnectedOnce: boolean;
   runAction: RunDroneAction;
   status: DroneStatus;
+  toggleArmed: () => void;
   toggleConnection: () => void;
 }
 
@@ -78,6 +79,14 @@ export function useDroneStatus(): UseDroneStatusResult {
     void runAction((drone: DroneApi) => drone.connect());
   }, [droneApi, runAction, status.connected, status.phase]);
 
+  const toggleArmed = useCallback(() => {
+    if (!droneApi || !status.connected) {
+      return;
+    }
+
+    void runAction((drone: DroneApi) => drone.setArmed(!status.armed));
+  }, [droneApi, runAction, status.armed, status.connected]);
+
   const connectionButtonLabel = useMemo(
     () => getConnectionButtonLabel(status),
     [status],
@@ -89,6 +98,7 @@ export function useDroneStatus(): UseDroneStatusResult {
     hasConnectedOnce,
     runAction,
     status,
+    toggleArmed,
     toggleConnection,
   };
 }

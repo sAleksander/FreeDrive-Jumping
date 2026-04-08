@@ -31,6 +31,7 @@ export async function stopDrone(
     publishStatus(context, {
       phase: 'error',
       connected: false,
+      armed: false,
       activeCommands: [],
       lastError: message,
       lastEvent: 'Stop command failed',

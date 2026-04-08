@@ -10,6 +10,7 @@ export function createIdleDriveState(): DroneDriveState {
     backward: false,
     left: false,
     right: false,
+    speed: 40,
   };
 }
 
@@ -17,6 +18,7 @@ export function createInitialStatus(): DroneStatus {
   return {
     phase: 'idle',
     connected: false,
+    armed: false,
     battery: null,
     posture: null,
     activeCommands: [],

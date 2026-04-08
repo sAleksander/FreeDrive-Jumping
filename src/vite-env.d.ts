@@ -4,11 +4,12 @@ declare global {
   type DronePhase = 'idle' | 'connecting' | 'connected' | 'error';
   type DronePosture = 'standing' | 'jumper' | 'kicker' | 'stuck' | 'unknown' | null;
   type DroneDriveCommand = 'forward' | 'backward' | 'left' | 'right';
-  type DroneDriveState = Record<DroneDriveCommand, boolean>;
+  type DroneDriveState = Record<DroneDriveCommand, boolean> & { speed: number };
 
   interface DroneStatus {
     phase: DronePhase;
     connected: boolean;
+    armed: boolean;
     battery: number | null;
     posture: DronePosture;
     activeCommands: DroneDriveCommand[];
@@ -52,6 +53,7 @@ declare global {
         getStatus: () => Promise<DroneStatus>;
         connect: () => Promise<DroneStatus>;
         disconnect: () => Promise<DroneStatus>;
+        setArmed: (armed: boolean) => Promise<DroneStatus>;
         setDriveState: (driveState: DroneDriveState) => Promise<DroneStatus>;
         drive: (command: DroneDriveCommand) => Promise<DroneStatus>;
         stop: () => Promise<DroneStatus>;

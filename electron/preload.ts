@@ -3,11 +3,12 @@ import { contextBridge, ipcRenderer } from 'electron';
 type DronePhase = 'idle' | 'connecting' | 'connected' | 'error';
 type DronePosture = 'standing' | 'jumper' | 'kicker' | 'stuck' | 'unknown' | null;
 type DroneDriveCommand = 'forward' | 'backward' | 'left' | 'right';
-type DroneDriveState = Record<DroneDriveCommand, boolean>;
+type DroneDriveState = Record<DroneDriveCommand, boolean> & { speed: number };
 
 export interface DroneStatus {
   phase: DronePhase;
   connected: boolean;
+  armed: boolean;
   battery: number | null;
   posture: DronePosture;
   activeCommands: DroneDriveCommand[];
@@ -50,6 +51,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getStatus: () => ipcRenderer.invoke('drone:get-status') as Promise<DroneStatus>,
     connect: () => ipcRenderer.invoke('drone:connect') as Promise<DroneStatus>,
     disconnect: () => ipcRenderer.invoke('drone:disconnect') as Promise<DroneStatus>,
+    setArmed: (armed: boolean) =>
+      ipcRenderer.invoke('drone:set-armed', armed) as Promise<DroneStatus>,
     setDriveState: (driveState: DroneDriveState) =>
       ipcRenderer.invoke('drone:set-drive-state', driveState) as Promise<DroneStatus>,
     drive: (command: DroneDriveCommand) =>

@@ -1,4 +1,3 @@
-import { useArmingState } from './features/drone/hooks/useArmingState';
 import { getDroneHudAlert } from './features/drone/lib/hudAlert';
 import { ArmingToggle } from './features/hud/components/ArmingToggle';
 import { BatteryIndicator } from './features/hud/components/BatteryIndicator';
@@ -19,16 +18,16 @@ function App() {
     hasConnectedOnce,
     runAction,
     status,
+    toggleArmed,
     toggleConnection,
   } = useDroneStatus();
 
   const { diagnostics, showVideo, videoCanvasRef } = useDroneVideo(status.connected);
   const shouldShowNoiseCanvas = !status.connected || !showVideo;
   const noiseCanvasRef = useRxNoiseCanvas(shouldShowNoiseCanvas);
-  const { armed, toggleArmed } = useArmingState(status.connected);
   const hudAlert = getDroneHudAlert(status, hasConnectedOnce);
 
-  useDriveKeyboard(status.connected, runAction);
+  useDriveKeyboard(status.connected, status.armed, runAction);
 
   return (
     <FpvStage
@@ -39,7 +38,7 @@ function App() {
     >
       <VideoDiagnostics diagnostics={diagnostics} />
       <ArmingToggle
-        armed={armed}
+        armed={status.armed}
         disabled={!status.connected}
         onToggle={toggleArmed}
       />

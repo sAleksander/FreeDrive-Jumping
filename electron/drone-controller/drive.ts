@@ -12,18 +12,88 @@ import type {
 } from './types';
 
 function getActiveCommands(driveState: DroneDriveState): DroneDriveCommand[] {
-  return (
-    Object.entries(driveState)
-      .filter(([, active]) => active)
-      .map(([command]) => command as DroneDriveCommand)
-  );
+  return (['forward', 'backward', 'left', 'right'] as const)
+    .filter((command) => driveState[command]);
 }
 
-function isDriveBlockedByPosture(context: DroneControllerContext) {
-  return context.status.posture === 'stuck';
+function formatCommandLabel(commands: DroneDriveCommand[]) {
+  return commands.length > 0 ? commands.join(' + ') : 'drive';
 }
 
-function sendDriveState(
+function clampDriveSpeed(speed: number) {
+  if (!Number.isFinite(speed)) {
+    return 40;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(speed)));
+}
+
+function setDriveLoopMode(
+  context: DroneControllerContext,
+  nextMode: DroneControllerContext['driveLoopMode'],
+) {
+  if (context.driveLoopMode === nextMode) {
+    return;
+  }
+
+  context.driveLoopMode = nextMode;
+
+  if (nextMode === 'armed-forward-zero') {
+    context.onDiagnosticEvent('drive.mode.armed_idle_forward_keepalive', {
+      activeCommands: [...context.status.activeCommands],
+      armed: context.status.armed,
+      connected: context.status.connected,
+      posture: context.status.posture,
+    });
+    return;
+  }
+
+  if (!context.status.connected || context.status.armed) {
+    return;
+  }
+
+  context.onDiagnosticEvent('drive.mode.disarmed_silent', {
+    activeCommands: [...context.status.activeCommands],
+    armed: context.status.armed,
+    connected: context.status.connected,
+    posture: context.status.posture,
+  });
+}
+
+function clearDriveLoopTimer(context: DroneControllerContext) {
+  if (!context.driveLoop) {
+    return;
+  }
+
+  clearInterval(context.driveLoop);
+  context.driveLoop = null;
+}
+
+function getDesiredDriveLoopMode(
+  context: DroneControllerContext,
+): DroneControllerContext['driveLoopMode'] {
+  if (!context.drone || !context.status.connected) {
+    return 'stopped';
+  }
+
+  if (!context.status.armed) {
+    return 'stopped';
+  }
+
+  return getActiveCommands(context.driveState).length > 0
+    ? 'active'
+    : 'armed-forward-zero';
+}
+
+function sendIdleKeepalive(context: DroneControllerContext) {
+  if (!context.drone) {
+    throw new Error('Drone is not connected.');
+  }
+
+  context.drone.forward(0);
+}
+
+function sendDriveCommand(
   context: DroneControllerContext,
   driveState: DroneDriveState,
 ) {
@@ -37,147 +107,174 @@ function sendDriveState(
   const effectiveTurnDirection = verticalDirection < 0
     ? -turnDirection
     : turnDirection;
+  const driveSpeed = clampDriveSpeed(driveState.speed);
 
   if (verticalDirection === 0 && turnDirection === 0) {
-    // Keep sending neutral PCMD packets while connected so the session
-    // stays alive even when the drone is stationary.
-    context.drone.forward(0);
+    sendIdleKeepalive(context);
     return;
   }
 
   if (verticalDirection > 0) {
-    context.drone.forward(context.driveSpeed);
+    context.drone.forward(driveSpeed);
   } else if (verticalDirection < 0) {
-    context.drone.backward(context.driveSpeed);
+    context.drone.backward(driveSpeed);
   } else {
-    context.drone.forward(0);
+    sendIdleKeepalive(context);
   }
 
   if (effectiveTurnDirection > 0) {
-    context.drone.right(context.driveSpeed);
+    context.drone.right(driveSpeed);
   } else if (effectiveTurnDirection < 0) {
-    context.drone.left(context.driveSpeed);
+    context.drone.left(driveSpeed);
   }
 }
 
-function handleDriveFailure(
+function handleConnectionFailure(
   context: DroneControllerContext,
-  commands: DroneDriveCommand[],
   error: unknown,
+  fallbackMessage: string,
+  failureEvent: string,
 ): never {
+  const message = toErrorMessage(error, fallbackMessage);
+
   clearDriveLoop(context);
   context.driveState = createIdleDriveState();
-
-  const label = commands.length > 0 ? commands.join(' + ') : 'drive';
-
-  const message = toErrorMessage(
-    error,
-    `Failed to send the ${label} command.`,
-  );
-
   publishStatus(context, {
     phase: 'error',
     connected: false,
+    armed: false,
     activeCommands: [],
     lastError: message,
-    lastEvent: `${label} command failed`,
+    lastEvent: failureEvent,
   });
 
   throw new Error(message);
 }
 
-function ensureDriveLoop(context: DroneControllerContext) {
-  if (context.driveLoop) {
+function syncDriveLoop(context: DroneControllerContext) {
+  const nextMode = getDesiredDriveLoopMode(context);
+
+  if (nextMode === 'stopped') {
+    clearDriveLoopTimer(context);
+    setDriveLoopMode(context, 'stopped');
     return;
   }
 
+  if (context.driveLoop && context.driveLoopMode === nextMode) {
+    return;
+  }
+
+  clearDriveLoopTimer(context);
+  setDriveLoopMode(context, nextMode);
   context.driveLoop = setInterval(() => {
-    if (
-      !context.drone ||
-      !context.status.connected
-    ) {
+    if (!context.drone || !context.status.connected) {
       clearDriveLoop(context);
       return;
     }
 
     try {
-      sendDriveState(context, context.driveState);
-    } catch (error) {
-      const activeCommands = [...context.status.activeCommands];
-      const label = activeCommands.length > 0
-        ? activeCommands.join(' + ')
-        : 'idle keepalive';
-      const message = toErrorMessage(
-        error,
-        `Failed to refresh the ${label} command.`,
-      );
+      if (context.driveLoopMode === 'armed-forward-zero') {
+        sendIdleKeepalive(context);
+        return;
+      }
 
-      clearDriveLoop(context);
-      context.driveState = createIdleDriveState();
-      publishStatus(context, {
-        phase: 'error',
-        connected: false,
-        activeCommands: [],
-        lastError: message,
-        lastEvent: 'Drive refresh failed',
-      });
+      sendDriveCommand(context, context.driveState);
+    } catch (error) {
+      const loopLabel = context.driveLoopMode === 'armed-forward-zero'
+        ? 'the armed idle forward(0) keepalive'
+        : `the ${formatCommandLabel(getActiveCommands(context.driveState))} command`;
+      const failureEvent = context.driveLoopMode === 'armed-forward-zero'
+        ? 'Armed idle keepalive failed'
+        : 'Drive refresh failed';
+
+      handleConnectionFailure(
+        context,
+        error,
+        `Failed to refresh ${loopLabel}.`,
+        failureEvent,
+      );
     }
   }, context.driveRefreshIntervalMs);
 }
 
-export function clearDriveLoop(context: DroneControllerContext) {
-  if (!context.driveLoop) {
-    return;
-  }
-
-  clearInterval(context.driveLoop);
-  context.driveLoop = null;
-}
-
-export function startDriveLoop(context: DroneControllerContext) {
-  ensureDriveLoop(context);
-}
-
-export function engageStuckDriveSafety(context: DroneControllerContext) {
-  const activeCommandsBeforeStop = [...context.status.activeCommands];
-  const driveStateBeforeStop = { ...context.driveState };
-  context.driveState = createIdleDriveState();
-
-  context.onDiagnosticEvent('drive.safety.stuck.engaged', {
-    posture: context.status.posture,
-    activeCommandsBeforeStop,
-    driveStateBeforeStop,
-    connected: context.status.connected,
-  });
-
+async function setIdleState(
+  context: DroneControllerContext,
+  lastEvent: string,
+): Promise<DroneStatus> {
   if (!context.drone || !context.status.connected) {
-    publishStatus(context, {
-      activeCommands: [],
-      lastError: null,
-      lastEvent: 'Drone reports it is stuck; drive commands blocked',
-    });
-    return;
+    return getStatusSnapshot(context);
   }
+
+  context.driveState = createIdleDriveState();
 
   try {
     context.drone.stop();
-  } catch {
-    // Best effort immediate stop for old library internals.
+    syncDriveLoop(context);
+    publishStatus(context, {
+      activeCommands: [],
+      lastError: null,
+      lastEvent,
+    });
+    return getStatusSnapshot(context);
+  } catch (error) {
+    handleConnectionFailure(
+      context,
+      error,
+      'Failed to stop the drone.',
+      'Stop command failed',
+    );
   }
+}
+
+export function clearDriveLoop(context: DroneControllerContext) {
+  clearDriveLoopTimer(context);
+  context.driveLoopMode = 'stopped';
+}
+
+export function startDriveLoop(context: DroneControllerContext) {
+  syncDriveLoop(context);
+}
+
+export async function setArmedState(
+  context: DroneControllerContext,
+  armed: boolean,
+): Promise<DroneStatus> {
+  if (!context.drone || !context.status.connected) {
+    return getStatusSnapshot(context);
+  }
+
+  if (context.status.armed === armed) {
+    syncDriveLoop(context);
+    return getStatusSnapshot(context);
+  }
+
+  context.driveState = createIdleDriveState();
 
   try {
-    sendDriveState(context, context.driveState);
-    ensureDriveLoop(context);
-  } catch {
-    // If neutral keepalive fails here, the regular refresh loop/error path
-    // will surface the connection problem on the next tick.
-  }
+    if (!armed) {
+      context.drone.stop();
+    }
 
-  publishStatus(context, {
-    activeCommands: [],
-    lastError: null,
-    lastEvent: 'Drone reports it is stuck; drive commands blocked',
-  });
+    publishStatus(context, {
+      armed,
+      activeCommands: [],
+      lastError: null,
+      lastEvent: armed ? 'Drone armed' : 'Drone disarmed',
+    });
+    context.onDiagnosticEvent(armed ? 'drone.armed' : 'drone.disarmed', {
+      connected: context.status.connected,
+      posture: context.status.posture,
+    });
+    syncDriveLoop(context);
+    return getStatusSnapshot(context);
+  } catch (error) {
+    handleConnectionFailure(
+      context,
+      error,
+      `Failed to ${armed ? 'arm' : 'disarm'} the drone.`,
+      armed ? 'Arm command failed' : 'Disarm command failed',
+    );
+  }
 }
 
 export async function setDriveState(
@@ -194,90 +291,50 @@ export async function setDriveState(
     activeCommands.length === currentCommands.length &&
     activeCommands.every((command, index) => command === currentCommands[index]);
 
-  if (isDriveBlockedByPosture(context) && activeCommands.length > 0) {
+  if (!context.status.armed) {
     context.driveState = createIdleDriveState();
-    context.onDiagnosticEvent('drive.command.blocked.stuck', {
-      posture: context.status.posture,
-      requestedCommands: activeCommands,
-      requestedDriveState: { ...driveState },
-      connected: context.status.connected,
-    });
 
-    try {
-      sendDriveState(context, context.driveState);
-      ensureDriveLoop(context);
-      publishStatus(context, {
-        activeCommands: [],
-        lastError: null,
-        lastEvent: 'Drive command ignored while drone is stuck',
+    if (activeCommands.length > 0) {
+      context.onDiagnosticEvent('drive.command.blocked.disarmed', {
+        connected: context.status.connected,
+        posture: context.status.posture,
+        requestedCommands: activeCommands,
+        requestedDriveState: { ...driveState },
       });
-      return getStatusSnapshot(context);
-    } catch (error) {
-      const message = toErrorMessage(
-        error,
-        'Failed to keep the drone idle while it is stuck.',
-      );
-
-      clearDriveLoop(context);
-      context.driveState = createIdleDriveState();
-      publishStatus(context, {
-        phase: 'error',
-        connected: false,
-        activeCommands: [],
-        lastError: message,
-        lastEvent: 'Stuck safety keepalive failed',
-      });
-      throw new Error(message);
     }
+
+    syncDriveLoop(context);
+    return getStatusSnapshot(context);
   }
 
   context.driveState = { ...driveState };
 
   if (activeCommands.length === 0) {
-    try {
-      sendDriveState(context, driveState);
-      ensureDriveLoop(context);
-      publishStatus(context, {
-        activeCommands: [],
-        lastEvent: 'Idle keepalive active',
-        lastError: null,
-      });
-      return getStatusSnapshot(context);
-    } catch (error) {
-      const message = toErrorMessage(
-        error,
-        'Failed to send the idle keepalive command.',
-      );
-
-      clearDriveLoop(context);
-      context.driveState = createIdleDriveState();
-      publishStatus(context, {
-        phase: 'error',
-        connected: false,
-        activeCommands: [],
-        lastError: message,
-        lastEvent: 'Idle keepalive failed',
-      });
-      throw new Error(message);
-    }
+    return setIdleState(context, 'Drive stopped');
   }
 
   if (isUnchanged) {
-    ensureDriveLoop(context);
+    syncDriveLoop(context);
     return getStatusSnapshot(context);
   }
 
   try {
-    sendDriveState(context, driveState);
-    ensureDriveLoop(context);
+    sendDriveCommand(context, driveState);
+    syncDriveLoop(context);
     publishStatus(context, {
       activeCommands,
       lastError: null,
-      lastEvent: `Drive command: ${activeCommands.join(' + ')} at ${context.driveSpeed}% speed`,
+      lastEvent: `Drive command: ${activeCommands.join(' + ')} at ${clampDriveSpeed(driveState.speed)}% speed`,
     });
     return getStatusSnapshot(context);
   } catch (error) {
-    handleDriveFailure(context, activeCommands, error);
+    const label = formatCommandLabel(activeCommands);
+    handleConnectionFailure(
+      context,
+      error,
+      `Failed to send the ${label} command.`,
+      `${label} command failed`,
+    );
   }
 }
 
@@ -290,5 +347,6 @@ export async function driveDrone(
     backward: command === 'backward',
     left: command === 'left',
     right: command === 'right',
+    speed: 40,
   });
 }

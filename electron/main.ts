@@ -100,6 +100,10 @@ ipcMain.handle('drone:set-drive-state', (_event, driveState: DroneDriveState) =>
     return droneController.setDriveState(driveState);
   },
 );
+ipcMain.handle('drone:set-armed', (_event, armed: boolean) => {
+  sessionLogger.log('command.set-armed', { armed });
+  return droneController.setArmed(armed);
+});
 ipcMain.handle('drone:drive', (_event, command: 'forward' | 'backward' | 'left' | 'right') => {
   sessionLogger.log('command.drive', { command });
   return droneController.drive(command);

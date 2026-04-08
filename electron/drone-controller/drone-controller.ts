@@ -1,6 +1,6 @@
 import { connectDrone } from './connect';
 import { disconnectDrone } from './disconnect';
-import { driveDrone, setDriveState } from './drive';
+import { driveDrone, setArmedState, setDriveState } from './drive';
 import {
   createIdleDriveState,
   createInitialStatus,
@@ -39,8 +39,8 @@ export class DroneController {
       drone: null,
       status: createInitialStatus(),
       driveState: createIdleDriveState(),
-      driveSpeed: 30,
       driveLoop: null,
+      driveLoopMode: 'stopped',
       driveRefreshIntervalMs: 25,
       videoWatchdog: null,
       videoRestartTimeout: null,
@@ -90,6 +90,10 @@ export class DroneController {
 
   async setDriveState(driveState: DroneDriveState) {
     return setDriveState(this.context, driveState);
+  }
+
+  async setArmed(armed: boolean) {
+    return setArmedState(this.context, armed);
   }
 
   async stop() {

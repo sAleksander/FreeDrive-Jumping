@@ -37,6 +37,7 @@ export async function connectDrone(
   publishStatus(context, {
     phase: 'connecting',
     connected: false,
+    armed: false,
     battery: null,
     posture: null,
     activeCommands: [],
@@ -73,6 +74,7 @@ export async function connectDrone(
           publishStatus(context, {
             phase: 'connected',
             connected: true,
+            armed: false,
             lastError: null,
             lastEvent: 'Drone ready for commands',
           });
@@ -106,6 +108,7 @@ export async function connectDrone(
     publishStatus(context, {
       phase: 'error',
       connected: false,
+      armed: false,
       battery: null,
       posture: null,
       activeCommands: [],

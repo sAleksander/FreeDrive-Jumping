@@ -15,11 +15,13 @@ export interface DroneDriveState {
   backward: boolean;
   left: boolean;
   right: boolean;
+  speed: number;
 }
 
 export interface DroneStatus {
   phase: DronePhase;
   connected: boolean;
+  armed: boolean;
   battery: number | null;
   posture: DronePosture;
   activeCommands: DroneDriveCommand[];
@@ -81,8 +83,8 @@ export interface DroneControllerContext {
   drone: NodeSumoClient | null;
   status: DroneStatus;
   driveState: DroneDriveState;
-  readonly driveSpeed: number;
   driveLoop: NodeJS.Timeout | null;
+  driveLoopMode: 'stopped' | 'active' | 'armed-forward-zero';
   readonly driveRefreshIntervalMs: number;
   videoWatchdog: NodeJS.Timeout | null;
   videoRestartTimeout: NodeJS.Timeout | null;
