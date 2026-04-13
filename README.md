@@ -1,7 +1,17 @@
 # FreeDrive-Jumping
 
-Minimal Electron + React + TypeScript shell for a future Parrot Jumping drone
-controller.
+Electron + React + TypeScript desktop app for experimenting with Parrot
+Jumping drone control from a Mac.
+
+## Current Status
+
+- Connect and disconnect from the drone through the Electron bridge
+- Arm and disarm controls in the HUD
+- Battery, warning, and connection state overlays
+- FPV stage with live video when available and RX noise fallback when not
+- Video diagnostics panel with log export
+- Keyboard driving with arrow keys
+- Drive speed modifiers: hold `C` for slow mode or `Shift` for boost
 
 ## Development
 
@@ -10,15 +20,24 @@ npm install
 npm run dev
 ```
 
-## Connectivity Spike
+## Using The Prototype
 
 1. Power on the Jumping drone and join its Wi-Fi network from this Mac.
 2. Start the app with `npm run dev`.
 3. Click `Connect` and wait for the app to report `connected`.
-4. Confirm that battery or posture events appear in the status panel.
-5. Press and hold `W`, `A`, `S`, or `D` to keep driving at a fixed speed.
-6. Combine keys like `W` + `A` or `W` + `D` to steer while moving.
-7. Release the key or switch away from the window to trigger `Stop`.
+4. Wait for status data to appear and for video to start if the stream is
+   available.
+5. Toggle `Arm`.
+6. Press and hold the arrow keys to drive the drone.
+7. Hold `C` for slow mode or `Shift` for boost while driving.
+8. Release the keys, switch away from the window, or disconnect to trigger
+   `Stop`.
+
+## In Progress
+
+- jumping
+- kicking
+- drone gestures
 
 ## Build
 

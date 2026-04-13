@@ -1,5 +1,5 @@
 const DEFAULT_DRIVE_SPEED = 40;
-const SLOW_DRIVE_SPEED = 20;
+const SLOW_DRIVE_SPEED = 10;
 const BOOST_DRIVE_SPEED = 80;
 
 const keyMap: Record<string, DroneDriveCommand> = {
