@@ -1,7 +1,7 @@
 # FreeDrive-Jumping
 
 Electron + React + TypeScript desktop app for experimenting with Parrot
-Jumping drone control from a Mac.
+Jumping drone control from a computer (Tested on MacOS).
 
 ## Current Status
 
@@ -22,7 +22,7 @@ npm run dev
 
 ## Using The Prototype
 
-1. Power on the Jumping drone and join its Wi-Fi network from this Mac.
+1. Power on the Jumping drone and join its Wi-Fi network from your computer.
 2. Start the app with `npm run dev`.
 3. Click `Connect` and wait for the app to report `connected`.
 4. Wait for status data to appear and for video to start if the stream is
