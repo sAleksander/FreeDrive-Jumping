@@ -3,23 +3,37 @@ import path from 'node:path';
 
 export interface AppSettings {
   armOnStartup: 0 | 1;
+  sneakSpeed: number;
+  regularSpeed: number;
+  runSpeed: number;
 }
 
 const defaultSettings: AppSettings = {
   armOnStartup: 1,
+  sneakSpeed: 10,
+  regularSpeed: 40,
+  runSpeed: 80,
 };
+
+function clampSpeed(v: unknown, fallback: number): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(100, Math.round(n / 5) * 5));
+}
 
 function normalizeSettings(value: unknown): AppSettings {
   if (!value || typeof value !== 'object') {
     return { ...defaultSettings };
   }
 
-  const armOnStartup = 'armOnStartup' in value && value.armOnStartup === 0
-    ? 0
-    : 1;
+  const raw = value as Record<string, unknown>;
+  const armOnStartup = raw.armOnStartup === 0 ? 0 : 1;
 
   return {
     armOnStartup,
+    sneakSpeed: clampSpeed(raw.sneakSpeed, defaultSettings.sneakSpeed),
+    regularSpeed: clampSpeed(raw.regularSpeed, defaultSettings.regularSpeed),
+    runSpeed: clampSpeed(raw.runSpeed, defaultSettings.runSpeed),
   };
 }
 

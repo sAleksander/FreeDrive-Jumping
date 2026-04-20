@@ -10,12 +10,15 @@ export function useDriveKeyboard(
   connected: boolean,
   armed: boolean,
   runAction: RunDroneAction,
+  speeds: { sneak: number; regular: number; run: number },
 ) {
   const heldCommandsRef = useRef<Set<DroneDriveCommand>>(new Set());
   const modifiersRef = useRef({
     slow: false,
     shift: false,
   });
+  const speedsRef = useRef(speeds);
+  speedsRef.current = speeds;
 
   useEffect(() => {
     if (!connected || !armed) {
@@ -27,7 +30,7 @@ export function useDriveKeyboard(
         drone.setDriveState(
           toDriveState(
             heldCommandsRef.current,
-            getDriveSpeedFromModifiers(modifiersRef.current),
+            getDriveSpeedFromModifiers(modifiersRef.current, speedsRef.current),
           ),
         ));
 

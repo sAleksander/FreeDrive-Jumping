@@ -33,6 +33,9 @@ export interface ExportedDiagnosticsLog {
 
 export interface AppSettings {
   armOnStartup: 0 | 1;
+  sneakSpeed: number;
+  regularSpeed: number;
+  runSpeed: number;
 }
 
 export interface RendererVideoDiagnostics {

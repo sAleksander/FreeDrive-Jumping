@@ -1,7 +1,3 @@
-const DEFAULT_DRIVE_SPEED = 40;
-const SLOW_DRIVE_SPEED = 10;
-const BOOST_DRIVE_SPEED = 80;
-
 const keyMap: Record<string, DroneDriveCommand> = {
   ArrowUp: 'forward',
   ArrowDown: 'backward',
@@ -19,23 +15,17 @@ export function createIdleDriveState(): DroneDriveState {
     backward: false,
     left: false,
     right: false,
-    speed: DEFAULT_DRIVE_SPEED,
+    speed: 40,
   };
 }
 
-export function getDriveSpeedFromModifiers(modifiers: {
-  slow: boolean;
-  shift: boolean;
-}): number {
-  if (modifiers.shift) {
-    return BOOST_DRIVE_SPEED;
-  }
-
-  if (modifiers.slow) {
-    return SLOW_DRIVE_SPEED;
-  }
-
-  return DEFAULT_DRIVE_SPEED;
+export function getDriveSpeedFromModifiers(
+  modifiers: { slow: boolean; shift: boolean },
+  speeds: { sneak: number; regular: number; run: number },
+): number {
+  if (modifiers.shift) return speeds.run;
+  if (modifiers.slow) return speeds.sneak;
+  return speeds.regular;
 }
 
 export function toDriveState(

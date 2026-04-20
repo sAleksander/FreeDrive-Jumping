@@ -1,20 +1,41 @@
+import { useEffect, useState } from 'react';
 import styles from './SettingsModal.module.css';
 
 interface SettingsModalProps {
   armOnStartup: boolean;
+  sneakSpeed: number;
+  regularSpeed: number;
+  runSpeed: number;
   disabled?: boolean;
   open: boolean;
   onClose: () => void;
   onToggleArmOnStartup: () => void;
+  onSneakSpeedChange: (v: number) => void;
+  onRegularSpeedChange: (v: number) => void;
+  onRunSpeedChange: (v: number) => void;
 }
 
 export function SettingsModal({
   armOnStartup,
+  sneakSpeed,
+  regularSpeed,
+  runSpeed,
   disabled = false,
   open,
   onClose,
   onToggleArmOnStartup,
+  onSneakSpeedChange,
+  onRegularSpeedChange,
+  onRunSpeedChange,
 }: SettingsModalProps) {
+  const [localSneak, setLocalSneak] = useState(sneakSpeed);
+  const [localRegular, setLocalRegular] = useState(regularSpeed);
+  const [localRun, setLocalRun] = useState(runSpeed);
+
+  useEffect(() => { setLocalSneak(sneakSpeed); }, [sneakSpeed]);
+  useEffect(() => { setLocalRegular(regularSpeed); }, [regularSpeed]);
+  useEffect(() => { setLocalRun(runSpeed); }, [runSpeed]);
+
   if (!open) return null;
 
   return (
@@ -41,6 +62,64 @@ export function SettingsModal({
               <span className={styles.thumb} />
             </span>
           </button>
+        </div>
+
+        <div className={styles.divider} />
+
+        <div className={styles.sliderSection}>
+          <div className={styles.sliderRow}>
+            <div className={styles.sliderHeader}>
+              <p className={styles.label}>Sneak speed</p>
+              <span className={styles.sliderValue}>{localSneak}%</span>
+            </div>
+            <input
+              className={styles.slider}
+              disabled={disabled}
+              max={100}
+              min={0}
+              step={5}
+              type="range"
+              value={localSneak}
+              onChange={e => setLocalSneak(Number(e.target.value))}
+              onPointerUp={e => onSneakSpeedChange(Number((e.target as HTMLInputElement).value))}
+            />
+          </div>
+
+          <div className={styles.sliderRow}>
+            <div className={styles.sliderHeader}>
+              <p className={styles.label}>Regular speed</p>
+              <span className={styles.sliderValue}>{localRegular}%</span>
+            </div>
+            <input
+              className={styles.slider}
+              disabled={disabled}
+              max={100}
+              min={0}
+              step={5}
+              type="range"
+              value={localRegular}
+              onChange={e => setLocalRegular(Number(e.target.value))}
+              onPointerUp={e => onRegularSpeedChange(Number((e.target as HTMLInputElement).value))}
+            />
+          </div>
+
+          <div className={styles.sliderRow}>
+            <div className={styles.sliderHeader}>
+              <p className={styles.label}>Run speed</p>
+              <span className={styles.sliderValue}>{localRun}%</span>
+            </div>
+            <input
+              className={styles.slider}
+              disabled={disabled}
+              max={100}
+              min={0}
+              step={5}
+              type="range"
+              value={localRun}
+              onChange={e => setLocalRun(Number(e.target.value))}
+              onPointerUp={e => onRunSpeedChange(Number((e.target as HTMLInputElement).value))}
+            />
+          </div>
         </div>
       </div>
     </>

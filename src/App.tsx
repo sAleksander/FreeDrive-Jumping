@@ -22,6 +22,9 @@ function App() {
     saving: settingsSaving,
     settings,
     setArmOnStartup,
+    setSneakSpeed,
+    setRegularSpeed,
+    setRunSpeed,
   } = useAppSettings();
 
   const {
@@ -39,7 +42,11 @@ function App() {
   const noiseCanvasRef = useRxNoiseCanvas(shouldShowNoiseCanvas);
   const hudAlert = getDroneHudAlert(status, hasConnectedOnce);
 
-  useDriveKeyboard(status.connected, status.armed, runAction);
+  useDriveKeyboard(status.connected, status.armed, runAction, {
+    sneak: settings.sneakSpeed,
+    regular: settings.regularSpeed,
+    run: settings.runSpeed,
+  });
 
   return (
     <FpvStage
@@ -65,12 +72,18 @@ function App() {
       <SettingsButton open={settingsOpen} onToggle={() => setSettingsOpen(v => !v)} />
       <SettingsModal
         armOnStartup={settings.armOnStartup === 1}
+        sneakSpeed={settings.sneakSpeed}
+        regularSpeed={settings.regularSpeed}
+        runSpeed={settings.runSpeed}
         disabled={settingsLoading || settingsSaving}
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         onToggleArmOnStartup={() => {
           void setArmOnStartup(settings.armOnStartup !== 1);
         }}
+        onSneakSpeedChange={v => { void setSneakSpeed(v); }}
+        onRegularSpeedChange={v => { void setRegularSpeed(v); }}
+        onRunSpeedChange={v => { void setRunSpeed(v); }}
       />
     </FpvStage>
   );
