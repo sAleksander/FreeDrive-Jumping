@@ -32,6 +32,10 @@ declare global {
     path: string;
   }
 
+  interface AppSettings {
+    armOnStartup: 0 | 1;
+  }
+
   interface RendererVideoDiagnostics {
     sourceFps: number;
     deliveredFps: number;
@@ -62,6 +66,10 @@ declare global {
         onVideoMetrics: (
           listener: (metrics: DroneVideoMetrics) => void,
         ) => () => void;
+      };
+      settings: {
+        get: () => Promise<AppSettings>;
+        update: (patch: Partial<AppSettings>) => Promise<AppSettings>;
       };
       diagnostics: {
         exportLog: () => Promise<ExportedDiagnosticsLog>;

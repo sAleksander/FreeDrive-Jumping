@@ -31,6 +31,10 @@ export interface ExportedDiagnosticsLog {
   path: string;
 }
 
+export interface AppSettings {
+  armOnStartup: 0 | 1;
+}
+
 export interface RendererVideoDiagnostics {
   sourceFps: number;
   deliveredFps: number;
@@ -104,6 +108,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeListener('drone:video-metrics', subscription);
       };
     },
+  },
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get') as Promise<AppSettings>,
+    update: (patch: Partial<AppSettings>) =>
+      ipcRenderer.invoke('settings:update', patch) as Promise<AppSettings>,
   },
   diagnostics: {
     exportLog: () =>

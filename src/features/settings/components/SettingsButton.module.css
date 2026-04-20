@@ -1,0 +1,37 @@
+.button {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(184, 255, 99, 0.18);
+  border-radius: 50%;
+  background: rgba(7, 12, 9, 0.72);
+  color: var(--hud-text);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 200ms ease;
+}
+
+.button:hover {
+  border-color: rgba(184, 255, 99, 0.42);
+  transform: rotate(30deg);
+}
+
+.active {
+  border-color: rgba(184, 255, 99, 0.5);
+  color: var(--hud-accent);
+  transform: rotate(60deg);
+}
+
+.active:hover {
+  transform: rotate(90deg);
+}

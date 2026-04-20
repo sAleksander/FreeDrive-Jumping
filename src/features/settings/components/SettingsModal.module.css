@@ -1,0 +1,130 @@
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.modal {
+  position: absolute;
+  top: 70px;
+  right: 18px;
+  z-index: 9;
+  min-width: 320px;
+  padding: 20px 24px;
+  border: 1px solid rgba(184, 255, 99, 0.2);
+  border-radius: 12px;
+  background: rgba(7, 12, 9, 0.92);
+  color: var(--hud-text);
+  backdrop-filter: blur(8px);
+}
+
+.title {
+  margin: 0 0 16px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hud-accent);
+}
+
+.section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.description {
+  margin: 0;
+  max-width: 210px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(232, 236, 228, 0.72);
+}
+
+.toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.toggle:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.track {
+  position: relative;
+  display: block;
+  width: 62px;
+  height: 34px;
+  border: 1px solid rgba(184, 255, 99, 0.16);
+  border-radius: 999px;
+  background: rgba(19, 29, 22, 0.95);
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(244, 246, 240, 0.9);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 160ms ease;
+}
+
+.enabled .track {
+  border-color: rgba(184, 255, 99, 0.32);
+  background: rgba(65, 102, 38, 0.92);
+}
+
+.enabled .thumb {
+  transform: translateX(28px);
+}
+
+.disabled .track {
+  background: rgba(19, 29, 22, 0.95);
+}
+
+@media (max-width: 720px) {
+  .modal {
+    right: 12px;
+    min-width: 286px;
+    padding: 18px 20px;
+  }
+
+  .section {
+    gap: 12px;
+  }
+
+  .description {
+    max-width: 180px;
+  }
+}

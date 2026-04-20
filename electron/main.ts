@@ -7,8 +7,10 @@ import {
   type DroneStatus,
   type DroneVideoMetrics,
 } from './drone-controller/drone-controller';
+import { AppSettingsStore } from './settings/app-settings';
 
 const sessionLogger = new SessionLogger();
+const appSettingsStore = new AppSettingsStore();
 
 const droneController = new DroneController(
   (status: DroneStatus) => {
@@ -72,7 +74,18 @@ ipcMain.handle('drone:connect', async () => {
   sessionLogger.log('command.connect.request');
 
   try {
-    const status = await droneController.connect();
+    let status = await droneController.connect();
+
+    if (status.connected && appSettingsStore.getSettings().armOnStartup === 1) {
+      try {
+        status = await droneController.setArmed(true);
+        sessionLogger.log('command.connect.auto-arm.success', status);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        sessionLogger.log('command.connect.auto-arm.error', { message });
+      }
+    }
+
     sessionLogger.log('command.connect.success', status);
     return status;
   } catch (error) {
@@ -112,6 +125,13 @@ ipcMain.handle('drone:stop', async () => {
   sessionLogger.log('command.stop.request');
   return droneController.stop();
 });
+ipcMain.handle('settings:get', () => appSettingsStore.getSettings());
+ipcMain.handle('settings:update', async (_event, patch) => {
+  sessionLogger.log('settings.update.request', patch);
+  const settings = await appSettingsStore.updateSettings(patch ?? {});
+  sessionLogger.log('settings.update.success', settings);
+  return settings;
+});
 ipcMain.handle('diagnostics:export-log', async () => {
   sessionLogger.log('diagnostics.export.request');
   return sessionLogger.exportCurrentLog();
@@ -121,7 +141,9 @@ ipcMain.on('diagnostics:video-renderer', (_event, diagnostics) => {
 });
 
 app.whenReady().then(async () => {
+  await appSettingsStore.initialize();
   await sessionLogger.initialize();
+  sessionLogger.log('settings.loaded', appSettingsStore.getSettings());
   createMainWindow().on('blur', () => {
     sessionLogger.log('window.blur');
     void droneController.stop();

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { getDroneHudAlert } from './features/drone/lib/hudAlert';
 import { ArmingToggle } from './features/hud/components/ArmingToggle';
 import { BatteryIndicator } from './features/hud/components/BatteryIndicator';
@@ -10,8 +11,19 @@ import { useDroneStatus } from './features/drone/hooks/useDroneStatus';
 import { FpvStage } from './features/video/components/FpvStage';
 import { useDroneVideo } from './features/video/hooks/useDroneVideo';
 import { useRxNoiseCanvas } from './features/video/hooks/useRxNoiseCanvas';
+import { SettingsButton } from './features/settings/components/SettingsButton';
+import { SettingsModal } from './features/settings/components/SettingsModal';
+import { useAppSettings } from './features/settings/hooks/useAppSettings';
 
 function App() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const {
+    loading: settingsLoading,
+    saving: settingsSaving,
+    settings,
+    setArmOnStartup,
+  } = useAppSettings();
+
   const {
     connectionButtonLabel,
     droneApiAvailable,
@@ -50,6 +62,16 @@ function App() {
         onToggle={toggleConnection}
       />
       <BatteryIndicator battery={status.battery} connected={status.connected} />
+      <SettingsButton open={settingsOpen} onToggle={() => setSettingsOpen(v => !v)} />
+      <SettingsModal
+        armOnStartup={settings.armOnStartup === 1}
+        disabled={settingsLoading || settingsSaving}
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onToggleArmOnStartup={() => {
+          void setArmOnStartup(settings.armOnStartup !== 1);
+        }}
+      />
     </FpvStage>
   );
 }
