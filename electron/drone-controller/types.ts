@@ -56,6 +56,8 @@ export interface NodeSumoArstreamState {
   fragments: Array<Buffer | undefined>;
 }
 
+export type DroneJumpType = 'long' | 'high';
+
 export interface NodeSumoClient {
   connect(callback?: (error?: unknown) => void): void;
   disconnect(): void;
@@ -64,6 +66,8 @@ export interface NodeSumoClient {
   left(speed: number): this;
   right(speed: number): this;
   stop(): this;
+  animationsLongJump(): this;
+  animationsHighJump(): this;
   videoStreaming(options?: { enabled?: number }): this;
   on(event: string, listener: (...args: unknown[]) => void): this;
   once(event: string, listener: (...args: unknown[]) => void): this;

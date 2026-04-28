@@ -1,6 +1,6 @@
 {
   "armOnStartup": 1,
-  "sneakSpeed": 5,
+  "sneakSpeed": 15,
   "regularSpeed": 20,
   "runSpeed": 100
 }

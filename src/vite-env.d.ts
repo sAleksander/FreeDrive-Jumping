@@ -64,6 +64,7 @@ declare global {
         setDriveState: (driveState: DroneDriveState) => Promise<DroneStatus>;
         drive: (command: DroneDriveCommand) => Promise<DroneStatus>;
         stop: () => Promise<DroneStatus>;
+        jump: (type: 'long' | 'high') => Promise<DroneStatus>;
         onStatus: (listener: (status: DroneStatus) => void) => () => void;
         onVideoFrame: (listener: (frame: Uint8Array) => void) => () => void;
         onVideoMetrics: (

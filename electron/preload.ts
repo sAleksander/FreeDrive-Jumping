@@ -111,6 +111,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeListener('drone:video-metrics', subscription);
       };
     },
+    jump: (type: 'long' | 'high') =>
+      ipcRenderer.invoke('drone:jump', type) as Promise<DroneStatus>,
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get') as Promise<AppSettings>,

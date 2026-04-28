@@ -1,6 +1,7 @@
 import { connectDrone } from './connect';
 import { disconnectDrone } from './disconnect';
 import { driveDrone, setArmedState, setDriveState } from './drive';
+import { jumpDrone } from './jump';
 import {
   createIdleDriveState,
   createInitialStatus,
@@ -11,6 +12,7 @@ import type {
   DroneControllerContext,
   DroneDriveCommand,
   DroneDriveState,
+  DroneJumpType,
   DronePhase,
   DronePosture,
   DroneStatus,
@@ -20,6 +22,7 @@ import type {
 export type {
   DroneDriveCommand,
   DroneDriveState,
+  DroneJumpType,
   DronePhase,
   DronePosture,
   DroneStatus,
@@ -98,5 +101,9 @@ export class DroneController {
 
   async stop() {
     return stopDrone(this.context);
+  }
+
+  async jump(type: DroneJumpType) {
+    return jumpDrone(this.context, type);
   }
 }

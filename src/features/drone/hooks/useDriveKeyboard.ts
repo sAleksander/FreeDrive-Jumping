@@ -12,6 +12,8 @@ export function useDriveKeyboard(
   runAction: RunDroneAction,
   speeds: { sneak: number; regular: number; run: number },
 ) {
+  const LONG_PRESS_MS = 1000;
+
   const heldCommandsRef = useRef<Set<DroneDriveCommand>>(new Set());
   const modifiersRef = useRef({
     slow: false,
@@ -19,6 +21,7 @@ export function useDriveKeyboard(
   });
   const speedsRef = useRef(speeds);
   speedsRef.current = speeds;
+  const spaceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!connected || !armed) {
@@ -40,10 +43,25 @@ export function useDriveKeyboard(
         slow: false,
         shift: false,
       };
+      if (spaceTimerRef.current !== null) {
+        clearTimeout(spaceTimerRef.current);
+        spaceTimerRef.current = null;
+      }
       void runAction((drone) => drone.stop());
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        if (!event.repeat && spaceTimerRef.current === null) {
+          event.preventDefault();
+          spaceTimerRef.current = setTimeout(() => {
+            spaceTimerRef.current = null;
+            void runAction((drone) => drone.jump('high'));
+          }, LONG_PRESS_MS);
+        }
+        return;
+      }
+
       if (event.code === 'KeyC' || event.key === 'Shift') {
         const nextModifiers = {
           slow: modifiersRef.current.slow || event.code === 'KeyC',
@@ -79,6 +97,17 @@ export function useDriveKeyboard(
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        if (spaceTimerRef.current !== null) {
+          // Released before threshold — cancel high jump, do long jump instead
+          event.preventDefault();
+          clearTimeout(spaceTimerRef.current);
+          spaceTimerRef.current = null;
+          void runAction((drone) => drone.jump('long'));
+        }
+        return;
+      }
+
       if (event.code === 'KeyC' || event.key === 'Shift') {
         modifiersRef.current = {
           slow: event.code !== 'KeyC' && modifiersRef.current.slow,

@@ -4,6 +4,7 @@ import { SessionLogger } from './diagnostics/session-logger';
 import {
   DroneController,
   type DroneDriveState,
+  type DroneJumpType,
   type DroneStatus,
   type DroneVideoMetrics,
 } from './drone-controller/drone-controller';
@@ -124,6 +125,10 @@ ipcMain.handle('drone:drive', (_event, command: 'forward' | 'backward' | 'left' 
 ipcMain.handle('drone:stop', async () => {
   sessionLogger.log('command.stop.request');
   return droneController.stop();
+});
+ipcMain.handle('drone:jump', (_event, type: DroneJumpType) => {
+  sessionLogger.log('command.jump', { type });
+  return droneController.jump(type);
 });
 ipcMain.handle('settings:get', () => appSettingsStore.getSettings());
 ipcMain.handle('settings:update', async (_event, patch) => {
