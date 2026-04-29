@@ -3,6 +3,7 @@ import path from 'node:path';
 
 export interface AppSettings {
   armOnStartup: 0 | 1;
+  virtualDrone: 0 | 1;
   sneakSpeed: number;
   regularSpeed: number;
   runSpeed: number;
@@ -10,6 +11,7 @@ export interface AppSettings {
 
 const defaultSettings: AppSettings = {
   armOnStartup: 1,
+  virtualDrone: 0,
   sneakSpeed: 10,
   regularSpeed: 40,
   runSpeed: 80,
@@ -28,9 +30,11 @@ function normalizeSettings(value: unknown): AppSettings {
 
   const raw = value as Record<string, unknown>;
   const armOnStartup = raw.armOnStartup === 0 ? 0 : 1;
+  const virtualDrone = raw.virtualDrone === 1 ? 1 : 0;
 
   return {
     armOnStartup,
+    virtualDrone,
     sneakSpeed: clampSpeed(raw.sneakSpeed, defaultSettings.sneakSpeed),
     regularSpeed: clampSpeed(raw.regularSpeed, defaultSettings.regularSpeed),
     runSpeed: clampSpeed(raw.runSpeed, defaultSettings.runSpeed),

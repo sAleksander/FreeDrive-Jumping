@@ -11,6 +11,7 @@ import {
   attachVideoListeners,
   startVideoPipeline,
 } from './video';
+import { VirtualDroneAdapter } from './virtual-drone';
 import type {
   DroneControllerContext,
   DroneStatus,
@@ -21,6 +22,7 @@ const sumo = require('node-sumo') as NodeSumoModule;
 
 export async function connectDrone(
   context: DroneControllerContext,
+  useVirtual = false,
 ): Promise<DroneStatus> {
   if (context.status.phase === 'connecting' || context.status.connected) {
     return getStatusSnapshot(context);
@@ -29,7 +31,7 @@ export async function connectDrone(
   teardownDrone(context);
   context.driveState = createIdleDriveState();
 
-  const drone = sumo.createClient();
+  const drone = useVirtual ? new VirtualDroneAdapter() : sumo.createClient();
   context.drone = drone;
   attachDroneListeners(context, drone);
   attachVideoListeners(context, drone);
@@ -79,7 +81,9 @@ export async function connectDrone(
             lastEvent: 'Drone ready for commands',
           });
           startDriveLoop(context);
-          startVideoPipeline(context);
+          if (!useVirtual) {
+            startVideoPipeline(context);
+          }
           resolve();
         });
       });

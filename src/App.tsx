@@ -21,10 +21,7 @@ function App() {
     loading: settingsLoading,
     saving: settingsSaving,
     settings,
-    setArmOnStartup,
-    setSneakSpeed,
-    setRegularSpeed,
-    setRunSpeed,
+    updateSetting,
   } = useAppSettings();
 
   const {
@@ -38,7 +35,7 @@ function App() {
   } = useDroneStatus();
 
   const { diagnostics, showVideo, videoCanvasRef } = useDroneVideo(status.connected);
-  const shouldShowNoiseCanvas = !status.connected || !showVideo;
+  const shouldShowNoiseCanvas = (!status.connected || !showVideo) && !(settings.virtualDrone === 1 && status.connected);
   const noiseCanvasRef = useRxNoiseCanvas(shouldShowNoiseCanvas);
   const hudAlert = getDroneHudAlert(status, hasConnectedOnce);
 
@@ -71,19 +68,11 @@ function App() {
       <BatteryIndicator battery={status.battery} connected={status.connected} />
       <SettingsButton open={settingsOpen} onToggle={() => setSettingsOpen(v => !v)} />
       <SettingsModal
-        armOnStartup={settings.armOnStartup === 1}
-        sneakSpeed={settings.sneakSpeed}
-        regularSpeed={settings.regularSpeed}
-        runSpeed={settings.runSpeed}
         disabled={settingsLoading || settingsSaving}
         open={settingsOpen}
+        settings={settings}
         onClose={() => setSettingsOpen(false)}
-        onToggleArmOnStartup={() => {
-          void setArmOnStartup(settings.armOnStartup !== 1);
-        }}
-        onSneakSpeedChange={v => { void setSneakSpeed(v); }}
-        onRegularSpeedChange={v => { void setRegularSpeed(v); }}
-        onRunSpeedChange={v => { void setRunSpeed(v); }}
+        onUpdate={updateSetting}
       />
     </FpvStage>
   );

@@ -75,7 +75,8 @@ ipcMain.handle('drone:connect', async () => {
   sessionLogger.log('command.connect.request');
 
   try {
-    let status = await droneController.connect();
+    const { virtualDrone } = appSettingsStore.getSettings();
+    let status = await droneController.connect({ virtual: virtualDrone === 1 });
 
     if (status.connected && appSettingsStore.getSettings().armOnStartup === 1) {
       try {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 const defaultSettings: AppSettings = {
   armOnStartup: 1,
+  virtualDrone: 0,
   sneakSpeed: 10,
   regularSpeed: 40,
   runSpeed: 80,
@@ -39,7 +40,7 @@ export function useAppSettings() {
     };
   }, [settingsApi]);
 
-  const setArmOnStartup = useCallback(async (enabled: boolean) => {
+  const updateSetting = useCallback(async (patch: Partial<AppSettings>) => {
     if (!settingsApi) {
       return;
     }
@@ -47,40 +48,7 @@ export function useAppSettings() {
     setSaving(true);
 
     try {
-      const nextSettings = await settingsApi.update({
-        armOnStartup: enabled ? 1 : 0,
-      });
-      setSettings(nextSettings);
-    } finally {
-      setSaving(false);
-    }
-  }, [settingsApi]);
-
-  const setSneakSpeed = useCallback(async (v: number) => {
-    if (!settingsApi) return;
-    setSaving(true);
-    try {
-      setSettings(await settingsApi.update({ sneakSpeed: v }));
-    } finally {
-      setSaving(false);
-    }
-  }, [settingsApi]);
-
-  const setRegularSpeed = useCallback(async (v: number) => {
-    if (!settingsApi) return;
-    setSaving(true);
-    try {
-      setSettings(await settingsApi.update({ regularSpeed: v }));
-    } finally {
-      setSaving(false);
-    }
-  }, [settingsApi]);
-
-  const setRunSpeed = useCallback(async (v: number) => {
-    if (!settingsApi) return;
-    setSaving(true);
-    try {
-      setSettings(await settingsApi.update({ runSpeed: v }));
+      setSettings(await settingsApi.update(patch));
     } finally {
       setSaving(false);
     }
@@ -90,9 +58,6 @@ export function useAppSettings() {
     loading,
     saving,
     settings,
-    setArmOnStartup,
-    setSneakSpeed,
-    setRegularSpeed,
-    setRunSpeed,
+    updateSetting,
   };
 }

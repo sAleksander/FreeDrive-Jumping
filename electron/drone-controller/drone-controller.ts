@@ -79,8 +79,8 @@ export class DroneController {
     return getStatusSnapshot(this.context);
   }
 
-  async connect() {
-    return connectDrone(this.context);
+  async connect(options?: { virtual?: boolean }) {
+    return connectDrone(this.context, options?.virtual ?? false);
   }
 
   async disconnect() {
