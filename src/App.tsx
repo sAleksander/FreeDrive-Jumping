@@ -11,6 +11,7 @@ import { useDroneStatus } from './features/drone/hooks/useDroneStatus';
 import { FpvStage } from './features/video/components/FpvStage';
 import { useDroneVideo } from './features/video/hooks/useDroneVideo';
 import { useRxNoiseCanvas } from './features/video/hooks/useRxNoiseCanvas';
+import { DroneModelBadge } from './features/hud/components/DroneModelBadge';
 import { SettingsButton } from './features/settings/components/SettingsButton';
 import { SettingsModal } from './features/settings/components/SettingsModal';
 import { useAppSettings } from './features/settings/hooks/useAppSettings';
@@ -66,6 +67,7 @@ function App() {
         onToggle={toggleConnection}
       />
       <BatteryIndicator battery={status.battery} connected={status.connected} />
+      <DroneModelBadge connected={status.connected} model={status.model} />
       <SettingsButton open={settingsOpen} onToggle={() => setSettingsOpen(v => !v)} />
       <SettingsModal
         disabled={settingsLoading || settingsSaving}

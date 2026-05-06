@@ -2,6 +2,7 @@ import type { Socket as UdpSocket } from 'node:dgram';
 import type { Socket as NetSocket } from 'node:net';
 
 export type DronePhase = 'idle' | 'connecting' | 'connected' | 'error';
+export type DroneModel = 'sumo' | 'race' | 'night' | 'unknown';
 export type DronePosture =
   | 'standing'
   | 'jumper'
@@ -24,6 +25,7 @@ export interface DroneStatus {
   armed: boolean;
   battery: number | null;
   posture: DronePosture;
+  model: DroneModel;
   activeCommands: DroneDriveCommand[];
   lastEvent: string | null;
   lastError: string | null;

@@ -51,7 +51,7 @@ export class VirtualDroneAdapter extends EventEmitter implements NodeSumoClient 
     return this;
   }
 
-  // Video streaming is a no-op — the renderer shows a black screen in virtual mode.
+  // Video streaming is a no-op — the renderer shows a noise screen in virtual mode.
   videoStreaming(_options?: { enabled?: number }): this { return this; }
 
   override removeAllListeners(event?: string | symbol): this {

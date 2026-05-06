@@ -9,9 +9,9 @@ interface VirtualDroneOptionProps {
 export function VirtualDroneOption({ value, disabled, onToggle }: VirtualDroneOptionProps) {
   return (
     <ToggleOption
-      description="Simulate the drone without hardware. Connect normally — no Wi-Fi needed."
+      description="Simulate a drone locally without a physical device."
       disabled={disabled}
-      label="Virtual drone mode"
+      label="Virtual drone"
       value={value}
       onToggle={onToggle}
     />

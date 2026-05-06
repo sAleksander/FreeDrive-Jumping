@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
 type DronePhase = 'idle' | 'connecting' | 'connected' | 'error';
+type DroneModel = 'sumo' | 'race' | 'night' | 'unknown';
 type DronePosture = 'standing' | 'jumper' | 'kicker' | 'stuck' | 'unknown' | null;
 type DroneDriveCommand = 'forward' | 'backward' | 'left' | 'right';
 type DroneDriveState = Record<DroneDriveCommand, boolean> & { speed: number };
@@ -11,6 +12,7 @@ export interface DroneStatus {
   armed: boolean;
   battery: number | null;
   posture: DronePosture;
+  model: DroneModel;
   activeCommands: DroneDriveCommand[];
   lastEvent: string | null;
   lastError: string | null;

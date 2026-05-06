@@ -1,4 +1,5 @@
 import { toErrorMessage } from './drone-controller-utils';
+import { detectDroneModel } from './detect';
 import { startDriveLoop } from './drive';
 import { attachDroneListeners } from './events';
 import {
@@ -42,6 +43,7 @@ export async function connectDrone(
     armed: false,
     battery: null,
     posture: null,
+    model: 'unknown',
     activeCommands: [],
     lastError: null,
     lastEvent: 'Starting discovery handshake',
@@ -81,9 +83,16 @@ export async function connectDrone(
             lastEvent: 'Drone ready for commands',
           });
           startDriveLoop(context);
-          if (!useVirtual) {
+
+          if (useVirtual) {
+            // Virtual drone has no UDP socket — model stays 'unknown', no video pipeline.
+          } else {
             startVideoPipeline(context);
+            detectDroneModel(drone, (model) => {
+              publishStatus(context, { model });
+            });
           }
+
           resolve();
         });
       });
@@ -115,6 +124,7 @@ export async function connectDrone(
       armed: false,
       battery: null,
       posture: null,
+      model: 'unknown',
       activeCommands: [],
       lastError: message,
       lastEvent: 'Connection failed',
