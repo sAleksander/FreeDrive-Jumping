@@ -1,5 +1,6 @@
 import styles from './SettingsModal.module.css';
 import { ArmOnStartupOption } from './settingOptions/ArmOnStartupOption';
+import { ShowVideoDiagnosticsOption } from './settingOptions/ShowVideoDiagnosticsOption';
 import { SpeedSettingsGroup } from './settingOptions/SpeedSettingsGroup';
 import { VirtualDroneOption } from './settingOptions/VirtualDroneOption';
 
@@ -34,6 +35,11 @@ export function SettingsModal({
           disabled={disabled}
           value={settings.virtualDrone === 1}
           onToggle={() => onUpdate({ virtualDrone: settings.virtualDrone === 1 ? 0 : 1 })}
+        />
+        <ShowVideoDiagnosticsOption
+          disabled={disabled}
+          value={settings.showVideoDiagnostics === 1}
+          onToggle={() => onUpdate({ showVideoDiagnostics: settings.showVideoDiagnostics === 1 ? 0 : 1 })}
         />
         <div className={styles.divider} />
         <SpeedSettingsGroup

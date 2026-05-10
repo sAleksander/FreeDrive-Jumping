@@ -1,7 +1,8 @@
 {
   "armOnStartup": 1,
   "virtualDrone": 0,
-  "sneakSpeed": 5,
+  "showVideoDiagnostics": 0,
+  "sneakSpeed": 10,
   "regularSpeed": 20,
   "runSpeed": 100
 }

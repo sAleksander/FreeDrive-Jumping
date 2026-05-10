@@ -53,7 +53,7 @@ function App() {
       showVideo={showVideo}
       videoCanvasRef={videoCanvasRef}
     >
-      <VideoDiagnostics diagnostics={diagnostics} />
+      {settings.showVideoDiagnostics === 1 && <VideoDiagnostics diagnostics={diagnostics} />}
       <ArmingToggle
         armed={status.armed}
         disabled={!status.connected}

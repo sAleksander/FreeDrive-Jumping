@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 const defaultSettings: AppSettings = {
   armOnStartup: 1,
   virtualDrone: 0,
+  showVideoDiagnostics: 0,
   sneakSpeed: 10,
   regularSpeed: 40,
   runSpeed: 80,

@@ -42,16 +42,7 @@ export function VideoDiagnostics({
 
   return (
     <section className={styles.panel}>
-      <div className={styles.header}>
-        <p className={styles.eyebrow}>Video</p>
-        <button
-          className={styles.exportButton}
-          onClick={() => void handleExportLog()}
-          type="button"
-        >
-          Export log
-        </button>
-      </div>
+      <p className={styles.eyebrow}>Video</p>
       <dl className={styles.grid}>
         <div>
           <dt>State</dt>
@@ -78,7 +69,16 @@ export function VideoDiagnostics({
           <dd>{formatLastFrameAge(diagnostics.lastFrameAgeMs)}</dd>
         </div>
       </dl>
-      <p className={styles.exportState}>{exportState}</p>
+      <div className={styles.footer}>
+        <button
+          className={styles.exportButton}
+          onClick={() => void handleExportLog()}
+          type="button"
+        >
+          Export log
+        </button>
+        <p className={styles.exportState}>{exportState}</p>
+      </div>
     </section>
   );
 }

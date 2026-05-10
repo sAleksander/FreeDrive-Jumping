@@ -30,7 +30,7 @@ export function SpeedOption({
         className={styles.slider}
         disabled={disabled}
         max={100}
-        min={0}
+        min={10}
         step={5}
         type="range"
         value={localValue}
